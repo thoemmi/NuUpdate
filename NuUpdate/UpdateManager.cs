@@ -1,0 +1,118 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using NLog;
+using NuGet;
+
+namespace NuUpdate {
+    public class UpdateManager : IUpdateManager {
+        private readonly string _packageId;
+
+        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private readonly IPackageRepository _packageRepository;
+
+        private UpdateInfo _latestPackage;
+        private List<UpdateInfo> _availableUpdates = new List<UpdateInfo>();
+
+        public UpdateManager(string packageId, string packageSource)
+            : this(packageId, PackageRepositoryFactory.Default.CreateRepository(packageSource)) {
+        }
+
+        public UpdateManager(string packageId, IPackageRepository packageRepository) {
+            _packageId = packageId;
+            _packageRepository = packageRepository;
+
+            Environment.SetEnvironmentVariable("NuGetCachePath", Path.Combine(GetAppBasePath(), "packages"));
+
+            var progressProvider = _packageRepository as IProgressProvider;
+            if (progressProvider != null) {
+                progressProvider.ProgressAvailable += (sender, args) => _logger.Info("{0}: {1}", args.Operation, args.PercentComplete);
+            }
+
+            var httpClientEvents = _packageRepository as IHttpClientEvents;
+            if (httpClientEvents != null) {
+                httpClientEvents.SendingRequest += (sender, args) => _logger.Info("requesting {0}", args.Request.RequestUri);
+            }
+        }
+
+        public Task<UpdateInfo> CheckForUpdate(Version currentVersion = null, bool includePrereleases = false) {
+            return Task.Factory.StartNew(() => {
+                var versionSpec = currentVersion != null
+                                      ? new VersionSpec { MinVersion = new SemanticVersion(currentVersion), IsMinInclusive = false }
+                                      : null;
+                var packages = _packageRepository.FindPackages(_packageId, versionSpec, includePrereleases, true).ToArray();
+
+                _availableUpdates = packages.Select(p => new UpdateInfo(p)).ToList();
+                RaiseAvailableUpdatesChanged();
+
+                _latestPackage = _availableUpdates.SingleOrDefault(
+                    p => includePrereleases ? p.Package.IsAbsoluteLatestVersion : p.Package.IsLatestVersion)
+                                 ?? _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
+
+                return _latestPackage;
+            });
+        }
+
+        public Task<UpdateInfo> DownloadPackage(UpdateInfo updateInfo) {
+            return Task.Factory.StartNew(() => {
+                // this line forces NuGet to download the package
+                updateInfo.Package.HasProjectContent();
+
+                return updateInfo;
+            });
+        }
+
+        public Task ApplyUpdate(UpdateInfo updateInfo) {
+            return Task.Factory.StartNew(() => {
+                var targetFolder = GetAppPath(updateInfo);
+                _logger.Info("Target path is " + targetFolder);
+
+                if (Directory.Exists(targetFolder)) {
+                    Directory.Delete(targetFolder, true);
+                }
+                Directory.CreateDirectory(targetFolder);
+
+                foreach (var contentFile in updateInfo.Package.GetContentFiles()) {
+                    Trace.Assert(contentFile.Path.StartsWith(@"content\", StringComparison.InvariantCultureIgnoreCase));
+
+                    _logger.Info("Extracting " + contentFile.Path);
+                    var targetPath = Path.Combine(targetFolder, contentFile.Path.Substring(@"content\".Length));
+                    using (var input = contentFile.GetStream()) {
+                        using (var output = File.Create(targetPath)) {
+                            input.CopyTo(output);
+                        }
+                    }
+                }
+            });
+        }
+
+        private string GetAppBasePath() {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                _packageId);
+        }
+
+        private string GetAppPath(UpdateInfo updateInfo) {
+            return Path.Combine(
+                GetAppBasePath(),
+                "app-" + updateInfo.Version
+                );
+        }
+
+        public IEnumerable<UpdateInfo> AvailableUpdates {
+            get { return _availableUpdates; }
+        }
+
+        public event EventHandler AvailableUpdatesChanged;
+
+        private void RaiseAvailableUpdatesChanged() {
+            var handler = AvailableUpdatesChanged;
+            if (handler != null) {
+                handler(this, EventArgs.Empty);
+            }
+        }
+    }
+}
