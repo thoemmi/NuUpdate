@@ -32,11 +32,12 @@
   </UsingTask>
 
   <Target Name="CreateCommonVersionInfo" BeforeTargets="CoreCompile">
-    <Exec Command="git describe --tags --long > version.txt" Outputs="version.txt" />
-    <ReadLinesFromFile File="version.txt">
+    <SetEnv Name="GIT_DIR" Value="$(SolutionDir).git" />
+    <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs="version.txt" />
+    <ReadLinesFromFile File="$(ProjectDir)version.txt">
       <Output TaskParameter="Lines" ItemName="OutputLines"/>
     </ReadLinesFromFile>
-    <Delete Files="version.txt"/>
+    <Delete Files="$(ProjectDir)version.txt"/>
     
     <GetVersion VersionString="@(OutputLines)">
       <Output TaskParameter="Major" PropertyName="Major"/>
