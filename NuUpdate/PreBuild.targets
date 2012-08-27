@@ -50,7 +50,19 @@
   </UsingTask>
 
   <Target Name="CreateCommonVersionInfo" BeforeTargets="CoreCompile">
+    <Message Importance="high" Text="CreateCommonVersionInfo" />
+
     <SetEnvVar Name="GIT_DIR" Value="$(SolutionDir).git" />
+
+    <Delete Files="$(ProjectDir)version.txt"/>
+    <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs="version.txt" />
+    <ReadLinesFromFile File="$(ProjectDir)version.txt">
+      <Output TaskParameter="Lines" ItemName="OutputLines"/>
+    </ReadLinesFromFile>
+    <Message Importance="High" Text="Tags: @(OutputLines)"/>
+    <Delete Files="$(ProjectDir)version.txt"/>
+
+
     <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs="version.txt" />
     <ReadLinesFromFile File="$(ProjectDir)version.txt">
       <Output TaskParameter="Lines" ItemName="OutputLines"/>
