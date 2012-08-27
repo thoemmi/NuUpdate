@@ -31,8 +31,26 @@
     </Task>
   </UsingTask>
 
+  <UsingTask
+    TaskName="SetEnvVar"
+    TaskFactory="CodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <Name ParameterType="System.String" Required="true" />
+      <Value ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <!--<Reference Include="" />-->
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+            System.Environment.SetEnvironmentVariable(Name, Value);
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
   <Target Name="CreateCommonVersionInfo" BeforeTargets="CoreCompile">
-    <SetEnv Name="GIT_DIR" Value="$(SolutionDir).git" />
+    <SetEnvVar Name="GIT_DIR" Value="$(SolutionDir).git" />
     <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs="version.txt" />
     <ReadLinesFromFile File="$(ProjectDir)version.txt">
       <Output TaskParameter="Lines" ItemName="OutputLines"/>
