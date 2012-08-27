@@ -29,7 +29,7 @@ namespace NuUpdate {
 
             var progressProvider = _packageRepository as IProgressProvider;
             if (progressProvider != null) {
-                progressProvider.ProgressAvailable += (sender, args) => _logger.Info("{0}: {1}", args.Operation, args.PercentComplete);
+                progressProvider.ProgressAvailable += ProgressProviderOnProgressAvailable;
             }
 
             var httpClientEvents = _packageRepository as IHttpClientEvents;
@@ -37,6 +37,17 @@ namespace NuUpdate {
                 httpClientEvents.SendingRequest += (sender, args) => _logger.Info("requesting {0}", args.Request.RequestUri);
             }
         }
+
+        private void ProgressProviderOnProgressAvailable(object sender, ProgressEventArgs args) {
+            _logger.Info("{0}: {1}", args.Operation, args.PercentComplete);
+
+            var handler = ProgressAvailable;
+            if (handler != null) {
+                handler(this, args);
+            }
+        }
+
+        private event EventHandler<ProgressEventArgs> ProgressAvailable;
 
         public Task<UpdateInfo> CheckForUpdate(Version currentVersion = null, bool includePrereleases = false) {
             return Task.Factory.StartNew(() => {
@@ -56,10 +67,19 @@ namespace NuUpdate {
             });
         }
 
-        public Task<UpdateInfo> DownloadPackage(UpdateInfo updateInfo) {
+        public Task<UpdateInfo> DownloadPackage(UpdateInfo updateInfo, Action<int> callbackPercentCompleted = null) {
             return Task.Factory.StartNew(() => {
+                var onProgressAvailable = callbackPercentCompleted != null ? (sender, args) => callbackPercentCompleted(args.PercentComplete) : (EventHandler<ProgressEventArgs>)null;
+                if (onProgressAvailable != null) {
+                    ProgressAvailable += onProgressAvailable;
+                }
+
                 // this line forces NuGet to download the package
                 updateInfo.Package.HasProjectContent();
+
+                if (onProgressAvailable != null) {
+                    ProgressAvailable -= onProgressAvailable;
+                }
 
                 return updateInfo;
             });
