@@ -7,10 +7,7 @@
     AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
     <ParameterGroup>
       <VersionString ParameterType="System.String" Required="true" />
-      <Major ParameterType="System.Int32" Output="true" />
-      <Minor ParameterType="System.Int32" Output="true" />
-      <Patch ParameterType="System.Int32" Output="true" />
-      <Revision ParameterType="System.Int32" Output="true" />
+      <Version ParameterType="System.String" Output="true" />
       <Commit ParameterType="System.String" Output="true" />
     </ParameterGroup>
     <Task>
@@ -21,29 +18,13 @@
       <Code Type="Fragment" Language="cs">
         <![CDATA[
           var match = Regex.Match(VersionString, @"^v(?<major>\d+)\.(?<minor>\d+)(\.(?<patch>\d+))?-(?<revision>\d+)-(?<commit>[a-z0-9]+)$");
-          Int32.TryParse(match.Groups["major"].Value, out _Major);
-          Int32.TryParse(match.Groups["minor"].Value, out _Minor);
-          Int32.TryParse(match.Groups["patch"].Value, out _Patch);
-          Int32.TryParse(match.Groups["revision"].Value, out _Revision);
-          Commit = match.Groups["commit"].Value;
-        ]]>
-      </Code>
-    </Task>
-  </UsingTask>
-
-  <UsingTask
-    TaskName="SetEnvVar"
-    TaskFactory="CodeTaskFactory"
-    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
-    <ParameterGroup>
-      <Name ParameterType="System.String" Required="true" />
-      <Value ParameterType="System.String" Required="true" />
-    </ParameterGroup>
-    <Task>
-      <!--<Reference Include="" />-->
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[
-            System.Environment.SetEnvironmentVariable(Name, Value);
+          int major, minor, patch, revision;
+          Int32.TryParse(match.Groups["major"].Value, out major);
+          Int32.TryParse(match.Groups["minor"].Value, out minor);
+          Int32.TryParse(match.Groups["patch"].Value, out patch);
+          Int32.TryParse(match.Groups["revision"].Value, out revision);
+          _Version = new Version(major, minor, patch, revision).ToString();
+          _Commit = match.Groups["commit"].Value;
         ]]>
       </Code>
     </Task>
@@ -52,40 +33,35 @@
   <Target Name="CreateCommonVersionInfo" BeforeTargets="CoreCompile">
     <Message Importance="high" Text="CreateCommonVersionInfo" />
 
-    <SetEnvVar Name="GIT_DIR" Value="$(SolutionDir).git" />
-
-    <Delete Files="$(ProjectDir)version.txt"/>
-    <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs="version.txt" />
-    <ReadLinesFromFile File="$(ProjectDir)version.txt">
-      <Output TaskParameter="Lines" ItemName="OutputLines"/>
-    </ReadLinesFromFile>
-    <Message Importance="High" Text="Tags: @(OutputLines)"/>
-    <Delete Files="$(ProjectDir)version.txt"/>
-
-
-    <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs="version.txt" />
-    <ReadLinesFromFile File="$(ProjectDir)version.txt">
-      <Output TaskParameter="Lines" ItemName="OutputLines"/>
-    </ReadLinesFromFile>
-    <Delete Files="$(ProjectDir)version.txt"/>
+    <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs=" $(ProjectDir)version.txt" WorkingDirectory="$(SolutionDir)" IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="ExitCode" />
+    </Exec>
+    <Message Importance="high" Text="Calling git failed with exit code $(ExitCode)" Condition="'$(ExitCode)'!='0'" />
     
-    <GetVersion VersionString="@(OutputLines)">
-      <Output TaskParameter="Major" PropertyName="Major"/>
-      <Output TaskParameter="Minor" PropertyName="Minor"/>
-      <Output TaskParameter="Patch" PropertyName="Patch"/>
-      <Output TaskParameter="Revision" PropertyName="Revision"/>
+    <ReadLinesFromFile File="$(ProjectDir)version.txt" Condition="'$(ExitCode)'=='0'">
+      <Output TaskParameter="Lines" ItemName="OutputLines"/>
+    </ReadLinesFromFile>
+    <Message Importance="High" Text="Tags: @(OutputLines)" Condition="'$(ExitCode)'=='0'"/>
+    <Delete Condition="Exists('$(ProjectDir)version.txt')" Files="$(ProjectDir)version.txt"/>
+
+    <GetVersion VersionString="@(OutputLines)" Condition="'$(ExitCode)'=='0'">
+      <Output TaskParameter="Version" PropertyName="VersionString"/>
       <Output TaskParameter="Commit" PropertyName="Commit"/>
     </GetVersion>
+      
+    <PropertyGroup>
+      <VersionString Condition="'$(VersionString)'==''">0.0.0.0</VersionString>
+    </PropertyGroup>
 
-    <Message Importance="High" Text="Creating CommonVersionInfo.cs with version $(Major).$(Minor).$(Patch).$(Revision)-$(Commit)" />
+    <Message Importance="High" Text="Creating CommonVersionInfo.cs with version $(VersionString) $(Commit)" />
 
     <WriteLinesToFile Overwrite="true" File="$(ProjectDir)CommonAssemblyInfo.cs" Encoding="UTF-8" Lines='using System.Reflection%3B
 
-// full version: $(Major).$(Minor).$(Patch).$(Revision)-$(Commit)
+// full version: $(VersionString)-$(Commit)
 
-[assembly: AssemblyVersion("$(Major).$(Minor).$(Patch).$(Revision)")]
-[assembly: AssemblyInformationalVersion("$(Major).$(Minor).$(Patch).$(Revision)")]
-[assembly: AssemblyFileVersion("$(Major).$(Minor).$(Patch).$(Revision)")]' />
+[assembly: AssemblyVersion("$(VersionString)")]
+[assembly: AssemblyInformationalVersion("$(VersionString)")]
+[assembly: AssemblyFileVersion("$(VersionString)")]' />
     
   </Target>
 </Project>
