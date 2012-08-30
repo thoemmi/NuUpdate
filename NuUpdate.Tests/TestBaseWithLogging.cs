@@ -1,4 +1,6 @@
-﻿using NLog;
+﻿using System;
+using System.IO;
+using NLog;
 using NLog.Config;
 using NLog.Targets;
 using NUnit.Framework;
@@ -15,6 +17,35 @@ namespace NuUpdate.Tests {
             var rule = new LoggingRule("*", LogLevel.Debug, debugTarget);
             config.LoggingRules.Add(rule);
             LogManager.Configuration = config;
+        }
+
+        protected IDisposable CreateTempTestPath(out string path) {
+            var folder = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(folder);
+            LogManager.GetCurrentClassLogger().Debug("Creating temp path " + folder);
+
+            path = folder;
+
+            return ActionAsDisposable.Create(() => {
+                //LogManager.GetCurrentClassLogger().Debug("Deleting temp path " + folder);
+                //Directory.Delete(folder, true);
+            });
+        }
+
+        public class ActionAsDisposable : IDisposable {
+            private readonly Action _action;
+
+            public static IDisposable Create(Action action) {
+                return new ActionAsDisposable(action);
+            }
+
+            private ActionAsDisposable(Action action) {
+                _action = action;
+            }
+
+            public void Dispose() {
+                _action();
+            }
         }
     }
 }
