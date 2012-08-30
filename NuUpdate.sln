@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{F85DCA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuUpdate.Tests", "NuUpdate.Tests\NuUpdate.Tests.csproj", "{F80E29B3-74D2-4098-8ACF-D3B6F4BF04A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuUpdate.NuGetTestServer", "NuUpdate.NuGetTestServer\NuUpdate.NuGetTestServer.csproj", "{C1599B21-E3D3-4399-B4C8-97C51C3EC529}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{F80E29B3-74D2-4098-8ACF-D3B6F4BF04A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F80E29B3-74D2-4098-8ACF-D3B6F4BF04A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F80E29B3-74D2-4098-8ACF-D3B6F4BF04A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1599B21-E3D3-4399-B4C8-97C51C3EC529}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1599B21-E3D3-4399-B4C8-97C51C3EC529}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1599B21-E3D3-4399-B4C8-97C51C3EC529}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1599B21-E3D3-4399-B4C8-97C51C3EC529}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
