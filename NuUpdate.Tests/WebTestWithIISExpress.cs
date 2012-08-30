@@ -12,7 +12,10 @@ namespace NuUpdate.Tests {
     [TestFixture]
     [Explicit]
     public class WebTestWithIISExpress : TestBaseWithLogging {
+        private const string APP_NAME = "TestApp";
         public static int Port = 8084;
+        public static string PackageSource = "http://localhost:" + Port + "/nuget/";
+
         private IISExpressDriver _iisExpress;
 
         [TestFixtureSetUp]
@@ -30,9 +33,9 @@ namespace NuUpdate.Tests {
 
         [Test]
         public void DownloadPackage() {
-            string path;
-            using (CreateTempTestPath(out path)) {
-                var sut = new UpdateManager(APP_NAME, null, rep, appPathBase: path);
+            string appPathBase;
+            using (CreateTempTestPath(out appPathBase)) {
+                var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase);
                 var updateInfo = sut.CheckForUpdate().Result;
                 sut.DownloadPackage(updateInfo).Wait();
             }
