@@ -14,20 +14,22 @@ namespace NuUpdate {
 
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private readonly IPackageRepository _packageRepository;
+        private readonly string _appPathBase;
 
         private UpdateInfo _latestPackage;
         private List<UpdateInfo> _availableUpdates = new List<UpdateInfo>();
 
-        public UpdateManager(string packageId, Version currentVersion, string packageSource)
-            : this(packageId, currentVersion, PackageRepositoryFactory.Default.CreateRepository(packageSource)) {
+        public UpdateManager(string packageId, Version currentVersion, string packageSource, string appPathBase = null)
+            : this(packageId, currentVersion, PackageRepositoryFactory.Default.CreateRepository(packageSource), appPathBase) {
         }
 
-        public UpdateManager(string packageId, Version currentVersion, IPackageRepository packageRepository) {
+        public UpdateManager(string packageId, Version currentVersion, IPackageRepository packageRepository, string appPathBase = null) {
             _packageId = packageId;
             _currentVersion = currentVersion;
             _packageRepository = packageRepository;
+            _appPathBase = appPathBase ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), _packageId); ;
 
-            Environment.SetEnvironmentVariable("NuGetCachePath", Path.Combine(GetAppBasePath(), "packages"));
+            Environment.SetEnvironmentVariable("NuGetCachePath", Path.Combine(_appPathBase, "packages"));
 
             var progressProvider = _packageRepository as IProgressProvider;
             if (progressProvider != null) {
@@ -117,15 +119,9 @@ namespace NuUpdate {
             });
         }
 
-        private string GetAppBasePath() {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                _packageId);
-        }
-
         private string GetAppPath(UpdateInfo updateInfo) {
             return Path.Combine(
-                GetAppBasePath(),
+                _appPathBase,
                 "app-" + updateInfo.Version
                 );
         }
