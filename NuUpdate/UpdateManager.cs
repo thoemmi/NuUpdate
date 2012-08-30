@@ -65,6 +65,12 @@ namespace NuUpdate {
                     p => includePrereleases ? p.Package.IsAbsoluteLatestVersion : p.Package.IsLatestVersion)
                                  ?? _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
 
+                if (_availableUpdates.Count == 0) {
+                    _logger.Debug("No updates found");
+                } else {
+                    _logger.Debug("Found {0} updates, latest is {1}", _availableUpdates.Count, _latestPackage.Version);
+                }
+
                 return _latestPackage;
             });
         }
