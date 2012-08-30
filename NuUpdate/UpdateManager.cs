@@ -10,6 +10,7 @@ using NuGet;
 namespace NuUpdate {
     public class UpdateManager : IUpdateManager {
         private readonly string _packageId;
+        private readonly Version _currentVersion;
 
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private readonly IPackageRepository _packageRepository;
@@ -17,12 +18,13 @@ namespace NuUpdate {
         private UpdateInfo _latestPackage;
         private List<UpdateInfo> _availableUpdates = new List<UpdateInfo>();
 
-        public UpdateManager(string packageId, string packageSource)
-            : this(packageId, PackageRepositoryFactory.Default.CreateRepository(packageSource)) {
+        public UpdateManager(string packageId, Version currentVersion, string packageSource)
+            : this(packageId, currentVersion, PackageRepositoryFactory.Default.CreateRepository(packageSource)) {
         }
 
-        public UpdateManager(string packageId, IPackageRepository packageRepository) {
+        public UpdateManager(string packageId, Version currentVersion, IPackageRepository packageRepository) {
             _packageId = packageId;
+            _currentVersion = currentVersion;
             _packageRepository = packageRepository;
 
             Environment.SetEnvironmentVariable("NuGetCachePath", Path.Combine(GetAppBasePath(), "packages"));
@@ -49,10 +51,10 @@ namespace NuUpdate {
 
         private event EventHandler<ProgressEventArgs> ProgressAvailable;
 
-        public Task<UpdateInfo> CheckForUpdate(Version currentVersion = null, bool includePrereleases = false) {
+        public Task<UpdateInfo> CheckForUpdate(bool includePrereleases = false) {
             return Task.Factory.StartNew(() => {
-                var versionSpec = currentVersion != null
-                                      ? new VersionSpec { MinVersion = new SemanticVersion(currentVersion), IsMinInclusive = false }
+                var versionSpec = _currentVersion != null
+                                      ? new VersionSpec { MinVersion = new SemanticVersion(_currentVersion), IsMinInclusive = false }
                                       : null;
                 var packages = _packageRepository.FindPackages(_packageId, versionSpec, includePrereleases, true).ToArray();
 
