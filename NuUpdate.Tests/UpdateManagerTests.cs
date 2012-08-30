@@ -42,9 +42,9 @@ namespace NuUpdate.Tests {
         private static IPackageRepository GetLocalRepository() {
             var repository = new Mock<IPackageRepository>();
             var packages = new[] {
-                CreateMockPackage("Solutionizer", "1.0"), 
-                CreateMockPackage("Solutionizer", "1.1", isLatest: true),
-                CreateMockPackage("Solutionizer", "1.2-beta", isAbsoluteLatestVersion: true)
+                CreateMockPackage(APP_NAME, "1.0"), 
+                CreateMockPackage(APP_NAME, "1.1", isLatest: true),
+                CreateMockPackage(APP_NAME, "1.2-beta", isAbsoluteLatestVersion: true)
             };
             repository.Setup(c => c.GetPackages()).Returns(packages.AsQueryable);
             return repository.Object;
