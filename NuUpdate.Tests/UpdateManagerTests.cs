@@ -6,7 +6,7 @@ using NuGet;
 
 namespace NuUpdate.Tests {
     [TestFixture]
-    public class UpdateManagerTests {
+    public class UpdateManagerTests : TestBaseWithLogging {
         private const string APP_NAME = "TestApp";
 
         [Test]
