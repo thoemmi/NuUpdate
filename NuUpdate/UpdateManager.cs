@@ -115,11 +115,14 @@ namespace NuUpdate {
                 }
                 Directory.CreateDirectory(targetFolder);
 
-                foreach (var contentFile in updateInfo.Package.GetContentFiles()) {
-                    Trace.Assert(contentFile.Path.StartsWith(@"content\", StringComparison.InvariantCultureIgnoreCase));
-
+                foreach (var contentFile in updateInfo.Package.GetLibFiles()) {
                     _logger.Info("Extracting " + contentFile.Path);
-                    var targetPath = Path.Combine(targetFolder, contentFile.Path.Substring(@"content\".Length));
+                    // TODO: net40 is hard-coded. Some day more frameworks should be supported
+                    var targetPath = Path.Combine(targetFolder, contentFile.Path.Substring(@"lib\net40\".Length));
+                    var targetDir = Path.GetDirectoryName(targetPath);
+                    if (!Directory.Exists(targetDir)) {
+                        Directory.CreateDirectory(targetDir);
+                    }
                     using (var input = contentFile.GetStream()) {
                         using (var output = File.Create(targetPath)) {
                             input.CopyTo(output);
