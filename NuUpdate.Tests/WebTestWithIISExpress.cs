@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NLog;
 using NUnit.Framework;
+using Assert = NUnit.Framework.Assert;
 
 namespace NuUpdate.Tests {
     [TestFixture]
@@ -45,9 +46,34 @@ namespace NuUpdate.Tests {
         public void CheckThereAreTwoPackagesForIntegrationTests() {
             string appPathBase;
             using (CreateTempTestPath(out appPathBase)) {
-                var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase);
+                var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase, _nuGetCachePathForTests);
                 sut.CheckForUpdate().Wait();
                 Assert.AreEqual(2, sut.AvailableUpdates.Count());
+            }
+        }
+
+        [Test]
+        public void CanDownloadPackage() {
+            string appPathBase;
+            using (CreateTempTestPath(out appPathBase)) {
+                var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase, _nuGetCachePathForTests);
+                var latestUpdate = sut.CheckForUpdate().Result;
+                sut.DownloadPackage(latestUpdate).Wait();
+
+                Assert.IsTrue(File.Exists(Path.Combine(_nuGetCachePathForTests, @"DemoApp.2.0.0.0.nupkg")), "Cannot find package in packages folder.");
+            }
+        }
+
+        [Test]
+        public void CanApplyPackage() {
+            string appPathBase;
+            using (CreateTempTestPath(out appPathBase)) {
+                var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase, _nuGetCachePathForTests);
+                var latestUpdate = sut.CheckForUpdate().Result;
+                sut.DownloadPackage(latestUpdate).Wait();
+                sut.ApplyUpdate(latestUpdate).Wait();
+
+                Assert.IsTrue(File.Exists(Path.Combine(appPathBase, @"app-2.0.0.0\DemoApp.exe")));
             }
         }
     }

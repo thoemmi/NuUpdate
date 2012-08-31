@@ -20,16 +20,24 @@ namespace NuUpdate {
         private List<UpdateInfo> _availableUpdates = new List<UpdateInfo>();
 
         public UpdateManager(string packageId, Version currentVersion, string packageSource, string appPathBase = null)
-            : this(packageId, currentVersion, PackageRepositoryFactory.Default.CreateRepository(packageSource), appPathBase) {
+            : this(packageId, currentVersion, packageSource, appPathBase, null) {
         }
 
-        public UpdateManager(string packageId, Version currentVersion, IPackageRepository packageRepository, string appPathBase = null) {
+        public UpdateManager(string packageId, Version currentVersion, IPackageRepository packageRepository, string appPathBase = null)
+            : this(packageId, currentVersion, packageRepository, appPathBase, null) {
+        }
+
+        internal UpdateManager(string packageId, Version currentVersion, string packageSource, string appPathBase, string nuGetCachePath)
+            : this(packageId, currentVersion, PackageRepositoryFactory.Default.CreateRepository(packageSource), appPathBase, nuGetCachePath) {
+        }
+
+        internal UpdateManager(string packageId, Version currentVersion, IPackageRepository packageRepository, string appPathBase, string nuGetCachePath) {
             _packageId = packageId;
             _currentVersion = currentVersion;
             _packageRepository = packageRepository;
             _appPathBase = appPathBase ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), _packageId); ;
 
-            Environment.SetEnvironmentVariable("NuGetCachePath", Path.Combine(_appPathBase, "packages"));
+            Environment.SetEnvironmentVariable("NuGetCachePath", nuGetCachePath ?? Path.Combine(_appPathBase, "packages"));
 
             var progressProvider = _packageRepository as IProgressProvider;
             if (progressProvider != null) {
