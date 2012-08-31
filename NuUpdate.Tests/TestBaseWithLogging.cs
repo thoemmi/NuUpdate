@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using NLog;
 using NLog.Config;
@@ -7,6 +8,8 @@ using NUnit.Framework;
 
 namespace NuUpdate.Tests {
     public class TestBaseWithLogging {
+        protected string _nuGetCachePathForTests = null;
+
         [TestFixtureSetUp]
         public void PrepareLogging() {
             var config = new LoggingConfiguration();
@@ -19,6 +22,21 @@ namespace NuUpdate.Tests {
             LogManager.Configuration = config;
         }
 
+        [TestFixtureSetUp]
+        public void CreatePackageCacheForTests() {
+            _nuGetCachePathForTests = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(_nuGetCachePathForTests);
+            LogManager.GetCurrentClassLogger().Debug("Creating NuGet cache path " + _nuGetCachePathForTests);
+        }
+
+        [TestFixtureTearDown]
+        public void DeletePackageCacheForTests() {
+            if (String.IsNullOrEmpty(_nuGetCachePathForTests) && Directory.Exists(_nuGetCachePathForTests)) {
+                LogManager.GetCurrentClassLogger().Debug("Deleting NuGet cache path " + _nuGetCachePathForTests);
+                Directory.Delete(_nuGetCachePathForTests, true);
+            }
+        }
+
         protected IDisposable CreateTempTestPath(out string path) {
             var folder = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             Directory.CreateDirectory(folder);
@@ -27,8 +45,8 @@ namespace NuUpdate.Tests {
             path = folder;
 
             return ActionAsDisposable.Create(() => {
-                //LogManager.GetCurrentClassLogger().Debug("Deleting temp path " + folder);
-                //Directory.Delete(folder, true);
+                LogManager.GetCurrentClassLogger().Debug("Deleting temp path " + folder);
+                Directory.Delete(folder, true);
             });
         }
 
