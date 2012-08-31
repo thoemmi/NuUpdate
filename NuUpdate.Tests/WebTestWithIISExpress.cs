@@ -21,7 +21,13 @@ namespace NuUpdate.Tests {
 
         [TestFixtureSetUp]
         public void StartWebServer() {
-            string applicationPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), @"..\..\..\NuUpdate.NuGetTestServer"));
+            if (IISExpressDriver.GetIISExpressPath() == null) {
+                Assert.Ignore("IIS Express is not installed.");
+                return;
+            }
+
+            string applicationPath =
+                Path.GetFullPath(Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), @"..\..\..\NuUpdate.NuGetTestServer"));
 
             _iisExpress = new IISExpressDriver();
             _iisExpress.Start(applicationPath, Port);
@@ -29,7 +35,10 @@ namespace NuUpdate.Tests {
 
         [TestFixtureTearDown]
         public void StopWebServer() {
-            _iisExpress.Dispose();
+            if (_iisExpress != null) {
+                _iisExpress.Dispose();
+                _iisExpress = null;
+            }
         }
 
         [Test]
@@ -100,6 +109,8 @@ namespace NuUpdate.Tests {
         }
 
         public void Dispose() {
+            _logger.Debug(_logPrefix + "shutting down");
+
             // does not work, see http://jasondentler.com/blog/2012/08/integration-testing-03-iis-express/
             //_input.Add("q");
             //Thread.Sleep(2000);
@@ -155,17 +166,21 @@ namespace NuUpdate.Tests {
                 process.Kill();
             }
 
-            if (File.Exists(@"c:\program files (x86)\IIS Express\IISExpress.exe")) {
-                StartProcess(@"c:\program files (x86)\IIS Express\IISExpress.exe",
-                             @"/systray:false /port:" + port + @" /path:""" + sitePhysicalDirectory + @"""");
-            } else {
-                StartProcess(@"c:\program files\IIS Express\IISExpress.exe",
-                             @"/systray:false /port:" + port + @" /path:""" + sitePhysicalDirectory + @"""");
-            }
+            StartProcess(GetIISExpressPath(), @"/systray:false /port:" + port + @" /path:""" + sitePhysicalDirectory + @"""");
 
             var match = WaitForConsoleOutputMatching(@"Successfully registered URL ""([^""]*)""");
 
             Url = match.Groups[1].Value;
+        }
+
+        public static string GetIISExpressPath() {
+            if (File.Exists(@"c:\program files (x86)\IIS Express\IISExpress.exe")) {
+                return @"c:\program files (x86)\IIS Express\IISExpress.exe";
+            } else if (File.Exists(@"c:\program files\IIS Express\IISExpress.exe")) {
+                return @"c:\program files\IIS Express\IISExpress.exe";
+            } else {
+                return null;
+            }
         }
 
         protected override void Shutdown() {
