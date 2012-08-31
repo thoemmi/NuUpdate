@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace NuUpdate.Tests {
     [TestFixture]
     [Explicit]
     public class WebTestWithIISExpress : TestBaseWithLogging {
-        private const string APP_NAME = "TestApp";
+        private const string APP_NAME = "DemoApp";
         public static int Port = 8084;
         public static string PackageSource = "http://localhost:" + Port + "/nuget/";
 
@@ -32,12 +33,12 @@ namespace NuUpdate.Tests {
         }
 
         [Test]
-        public void DownloadPackage() {
+        public void CheckThereAreTwoPackagesForIntegrationTests() {
             string appPathBase;
             using (CreateTempTestPath(out appPathBase)) {
                 var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase);
-                var updateInfo = sut.CheckForUpdate().Result;
-                sut.DownloadPackage(updateInfo).Wait();
+                sut.CheckForUpdate().Wait();
+                Assert.AreEqual(2, sut.AvailableUpdates.Count());
             }
         }
     }

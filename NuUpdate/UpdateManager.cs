@@ -63,9 +63,11 @@ namespace NuUpdate {
                 _availableUpdates = packages.Select(p => new UpdateInfo(p)).ToList();
                 RaiseAvailableUpdatesChanged();
 
-                _latestPackage = _availableUpdates.SingleOrDefault(
-                    p => includePrereleases ? p.Package.IsAbsoluteLatestVersion : p.Package.IsLatestVersion)
-                                 ?? _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
+                // IsAbsoluteLatestVersion and IsLatestVersion are not what I expected them to be...
+                //_latestPackage = _availableUpdates.SingleOrDefault(
+                //    p => includePrereleases ? p.Package.IsAbsoluteLatestVersion : p.Package.IsLatestVersion)
+                //                 ?? _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
+                _latestPackage = _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
 
                 if (_availableUpdates.Count == 0) {
                     _logger.Debug("No updates found");
