@@ -27,8 +27,10 @@ namespace NuUpdate.Tests {
                 return;
             }
 
-            string applicationPath =
+// ReSharper disable AssignNullToNotNullAttribute
+            var applicationPath =
                 Path.GetFullPath(Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), @"..\..\..\NuUpdate.NuGetTestServer"));
+// ReSharper restore AssignNullToNotNullAttribute
 
             _iisExpress = new IISExpressDriver();
             _iisExpress.Start(applicationPath, Port);

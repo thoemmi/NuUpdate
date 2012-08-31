@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,7 +34,7 @@ namespace NuUpdate {
             _packageId = packageId;
             _currentVersion = currentVersion;
             _packageRepository = packageRepository;
-            _appPathBase = appPathBase ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), _packageId); ;
+            _appPathBase = appPathBase ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), _packageId);
 
             Environment.SetEnvironmentVariable("NuGetCachePath", nuGetCachePath ?? Path.Combine(_appPathBase, "packages"));
 
@@ -77,7 +76,7 @@ namespace NuUpdate {
                 //                 ?? _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
                 _latestPackage = _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
 
-                if (_availableUpdates.Count == 0) {
+                if (_latestPackage == null) {
                     _logger.Debug("No updates found");
                 } else {
                     _logger.Debug("Found {0} updates, latest is {1}", _availableUpdates.Count, _latestPackage.Version);
@@ -120,7 +119,7 @@ namespace NuUpdate {
                     // TODO: net40 is hard-coded. Some day more frameworks should be supported
                     var targetPath = Path.Combine(targetFolder, contentFile.Path.Substring(@"lib\net40\".Length));
                     var targetDir = Path.GetDirectoryName(targetPath);
-                    if (!Directory.Exists(targetDir)) {
+                    if (targetDir != null && !Directory.Exists(targetDir)) {
                         Directory.CreateDirectory(targetDir);
                     }
                     using (var input = contentFile.GetStream()) {
