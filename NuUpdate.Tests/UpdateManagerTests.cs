@@ -6,14 +6,14 @@ using NuGet;
 
 namespace NuUpdate.Tests {
     [TestFixture]
-    public class UpdateManagerTests {
+    public class UpdateManagerTests : TestBaseWithLogging {
         private const string APP_NAME = "TestApp";
 
         [Test]
         public void WithNoCurrentVersionGetAllPackages() {
             var rep = GetLocalRepository();
 
-            var sut = new UpdateManager(APP_NAME, rep);
+            var sut = new UpdateManager(APP_NAME, null, rep);
             sut.CheckForUpdate().Wait();
 
             Assert.AreEqual(2, sut.AvailableUpdates.Count());
@@ -23,8 +23,8 @@ namespace NuUpdate.Tests {
         public void NoNewerReleasePackages() {
             var rep = GetLocalRepository();
 
-            var sut = new UpdateManager(APP_NAME, rep);
-            sut.CheckForUpdate(new Version(1, 1)).Wait();
+            var sut = new UpdateManager(APP_NAME, new Version(1, 1), rep);
+            sut.CheckForUpdate().Wait();
 
             Assert.AreEqual(0, sut.AvailableUpdates.Count());
         }
@@ -33,8 +33,8 @@ namespace NuUpdate.Tests {
         public void FindPrereleasePackage() {
             var rep = GetLocalRepository();
 
-            var sut = new UpdateManager(APP_NAME, rep);
-            sut.CheckForUpdate(new Version(1, 1), includePrereleases: true).Wait();
+            var sut = new UpdateManager(APP_NAME, new Version(1, 1), rep);
+            sut.CheckForUpdate(includePrereleases: true).Wait();
 
             Assert.AreEqual(1, sut.AvailableUpdates.Count());
         }
@@ -42,9 +42,9 @@ namespace NuUpdate.Tests {
         private static IPackageRepository GetLocalRepository() {
             var repository = new Mock<IPackageRepository>();
             var packages = new[] {
-                CreateMockPackage("Solutionizer", "1.0"), 
-                CreateMockPackage("Solutionizer", "1.1", isLatest: true),
-                CreateMockPackage("Solutionizer", "1.2-beta", isAbsoluteLatestVersion: true)
+                CreateMockPackage(APP_NAME, "1.0"), 
+                CreateMockPackage(APP_NAME, "1.1", isLatest: true),
+                CreateMockPackage(APP_NAME, "1.2-beta", isAbsoluteLatestVersion: true)
             };
             repository.Setup(c => c.GetPackages()).Returns(packages.AsQueryable);
             return repository.Object;
