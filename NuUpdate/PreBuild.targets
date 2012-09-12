@@ -7,10 +7,7 @@
     AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
     <ParameterGroup>
       <VersionString ParameterType="System.String" Required="true" />
-      <Major ParameterType="System.Int32" Output="true" />
-      <Minor ParameterType="System.Int32" Output="true" />
-      <Patch ParameterType="System.Int32" Output="true" />
-      <Revision ParameterType="System.Int32" Output="true" />
+      <Version ParameterType="System.String" Output="true" />
       <Commit ParameterType="System.String" Output="true" />
     </ParameterGroup>
     <Task>
@@ -21,59 +18,84 @@
       <Code Type="Fragment" Language="cs">
         <![CDATA[
           var match = Regex.Match(VersionString, @"^v(?<major>\d+)\.(?<minor>\d+)(\.(?<patch>\d+))?-(?<revision>\d+)-(?<commit>[a-z0-9]+)$");
-          Int32.TryParse(match.Groups["major"].Value, out _Major);
-          Int32.TryParse(match.Groups["minor"].Value, out _Minor);
-          Int32.TryParse(match.Groups["patch"].Value, out _Patch);
-          Int32.TryParse(match.Groups["revision"].Value, out _Revision);
-          Commit = match.Groups["commit"].Value;
+          int major, minor, patch, revision;
+          Int32.TryParse(match.Groups["major"].Value, out major);
+          Int32.TryParse(match.Groups["minor"].Value, out minor);
+          Int32.TryParse(match.Groups["patch"].Value, out patch);
+          Int32.TryParse(match.Groups["revision"].Value, out revision);
+          _Version = new Version(major, minor, patch, revision).ToString();
+          _Commit = match.Groups["commit"].Value;
         ]]>
       </Code>
     </Task>
   </UsingTask>
 
   <UsingTask
-    TaskName="SetEnvVar"
+    TaskName="ExistsInPath"
     TaskFactory="CodeTaskFactory"
     AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
     <ParameterGroup>
-      <Name ParameterType="System.String" Required="true" />
-      <Value ParameterType="System.String" Required="true" />
+      <FileName ParameterType="System.String" Required="true" />
+      <Exists ParameterType="System.Boolean" Output="true" />
     </ParameterGroup>
     <Task>
       <!--<Reference Include="" />-->
+      <Using Namespace="System"/>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.Text.RegularExpressions" />
       <Code Type="Fragment" Language="cs">
         <![CDATA[
-            System.Environment.SetEnvironmentVariable(Name, Value);
+        var values = Environment.GetEnvironmentVariable("PATH");
+        foreach (var path in values.Split(';')) {
+            var fullPath = Path.Combine(path, FileName);
+            if (File.Exists(fullPath)) {
+                Exists = true;
+                return true;
+            }
+        }
+        Exists = false;
         ]]>
       </Code>
     </Task>
   </UsingTask>
 
   <Target Name="CreateCommonVersionInfo" BeforeTargets="CoreCompile">
-    <SetEnvVar Name="GIT_DIR" Value="$(SolutionDir).git" />
-    <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs="version.txt" />
-    <ReadLinesFromFile File="$(ProjectDir)version.txt">
+    <Message Importance="high" Text="CreateCommonVersionInfo" />
+
+    <ExistsInPath FileName="git.cmd">
+      <Output TaskParameter="Exists" PropertyName="GitExists"/>
+    </ExistsInPath>
+    <Message Importance="High" Text="git not found!" Condition="!$(GitExists)"/>
+      
+    <Exec Command="git describe --tags --long > $(ProjectDir)version.txt" Outputs="$(ProjectDir)version.txt" WorkingDirectory="$(SolutionDir)" IgnoreExitCode="true" Condition="$(GitExists)">
+      <Output TaskParameter="ExitCode" PropertyName="ExitCode" />
+    </Exec>
+    <Message Importance="high" Text="Calling git failed with exit code $(ExitCode)" Condition="$(GitExists) And '$(ExitCode)'!='0'" />
+    
+    <ReadLinesFromFile File="$(ProjectDir)version.txt" Condition="$(GitExists) And '$(ExitCode)'=='0'">
       <Output TaskParameter="Lines" ItemName="OutputLines"/>
     </ReadLinesFromFile>
-    <Delete Files="$(ProjectDir)version.txt"/>
-    
-    <GetVersion VersionString="@(OutputLines)">
-      <Output TaskParameter="Major" PropertyName="Major"/>
-      <Output TaskParameter="Minor" PropertyName="Minor"/>
-      <Output TaskParameter="Patch" PropertyName="Patch"/>
-      <Output TaskParameter="Revision" PropertyName="Revision"/>
+    <Message Importance="High" Text="Tags: @(OutputLines)" Condition="$(GitExists) And '$(ExitCode)'=='0'"/>
+    <Delete Condition="Exists('$(ProjectDir)version.txt')" Files="$(ProjectDir)version.txt"/>
+
+    <GetVersion VersionString="@(OutputLines)" Condition="$(GitExists) And '$(ExitCode)'=='0'">
+      <Output TaskParameter="Version" PropertyName="VersionString"/>
       <Output TaskParameter="Commit" PropertyName="Commit"/>
     </GetVersion>
+      
+    <PropertyGroup>
+      <VersionString Condition="'$(VersionString)'==''">0.0.0.0</VersionString>
+    </PropertyGroup>
 
-    <Message Importance="High" Text="Creating CommonVersionInfo.cs with version $(Major).$(Minor).$(Patch).$(Revision)-$(Commit)" />
+    <Message Importance="High" Text="Creating CommonVersionInfo.cs with version $(VersionString) $(Commit)" />
 
     <WriteLinesToFile Overwrite="true" File="$(ProjectDir)CommonAssemblyInfo.cs" Encoding="UTF-8" Lines='using System.Reflection%3B
 
-// full version: $(Major).$(Minor).$(Patch).$(Revision)-$(Commit)
+// full version: $(VersionString)-$(Commit)
 
-[assembly: AssemblyVersion("$(Major).$(Minor).$(Patch).$(Revision)")]
-[assembly: AssemblyInformationalVersion("$(Major).$(Minor).$(Patch).$(Revision)")]
-[assembly: AssemblyFileVersion("$(Major).$(Minor).$(Patch).$(Revision)")]' />
+[assembly: AssemblyVersion("$(VersionString)")]
+[assembly: AssemblyInformationalVersion("$(VersionString)")]
+[assembly: AssemblyFileVersion("$(VersionString)")]' />
     
   </Target>
 </Project>

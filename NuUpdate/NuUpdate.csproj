@@ -62,8 +62,10 @@
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <Import Project="PreBuild.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if not exist "$(SolutionDir)NuPack" mkdir "$(SolutionDir)NuPack"
-"$(SolutionDir).nuget\NuGet.exe" pack "$(ProjectPath)" -OutputDirectory "$(SolutionDir)NuPack"</PostBuildEvent>
+    <PostBuildEvent>rem if not exist "$(SolutionDir)NuPack" mkdir "$(SolutionDir)NuPack"
+rem "$(SolutionDir).nuget\NuGet.exe" pack "$(ProjectPath)" -OutputDirectory "$(SolutionDir)NuPack"
+
+"$(SolutionDir).nuget\NuGet.exe" pack "$(ProjectPath)"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
