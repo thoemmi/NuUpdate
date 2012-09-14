@@ -9,6 +9,7 @@
       <VersionString ParameterType="System.String" Required="true" />
       <Version ParameterType="System.String" Output="true" />
       <Commit ParameterType="System.String" Output="true" />
+      <VersionSuffix ParameterType="System.String" Output="true" />
     </ParameterGroup>
     <Task>
       <!--<Reference Include="" />-->
@@ -24,6 +25,7 @@
           Int32.TryParse(match.Groups["patch"].Value, out patch);
           Int32.TryParse(match.Groups["revision"].Value, out revision);
           _Version = new Version(major, minor, patch, revision).ToString();
+          _VersionSuffix = revision == 0 ? String.Empty : "-Beta";
           _Commit = match.Groups["commit"].Value;
         ]]>
       </Code>
@@ -81,6 +83,7 @@
     <GetVersion VersionString="@(OutputLines)" Condition="$(GitExists) And '$(ExitCode)'=='0'">
       <Output TaskParameter="Version" PropertyName="VersionString"/>
       <Output TaskParameter="Commit" PropertyName="Commit"/>
+      <Output TaskParameter="VersionSuffix" PropertyName="VersionSuffix"/>
     </GetVersion>
       
     <PropertyGroup>
@@ -94,7 +97,7 @@
 // full version: $(VersionString)-$(Commit)
 
 [assembly: AssemblyVersion("$(VersionString)")]
-[assembly: AssemblyInformationalVersion("$(VersionString)")]
+[assembly: AssemblyInformationalVersion("$(VersionString)$(VersionSuffix)")] 
 [assembly: AssemblyFileVersion("$(VersionString)")]' />
     
   </Target>
