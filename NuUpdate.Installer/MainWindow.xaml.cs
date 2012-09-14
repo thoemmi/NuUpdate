@@ -23,6 +23,9 @@ namespace NuUpdate.Installer {
             InitializeComponent();
             ConfigureLogging(PACKAGE_ID);
             _updateManager = new UpdateManager(PACKAGE_ID, null, PACKAGE_SOURCE);
+
+            Title = PACKAGE_ID + " Installer";
+            lblProgress.Text = PACKAGE_ID + " will be installed once you press Start.";
         }
 
         private static void ConfigureLogging(string packageName) {
