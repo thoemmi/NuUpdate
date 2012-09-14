@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoApp.V1", "Demos\DemoApp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoApp.V2", "Demos\DemoApp.V2\DemoApp.V2.csproj", "{A175855D-2878-4221-8B02-1A7BDCDA4CFE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuUpdate.Installer", "NuUpdate.Installer\NuUpdate.Installer.csproj", "{E993C187-70E8-4170-9F49-90610216256C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +48,10 @@ Global
 		{A175855D-2878-4221-8B02-1A7BDCDA4CFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A175855D-2878-4221-8B02-1A7BDCDA4CFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A175855D-2878-4221-8B02-1A7BDCDA4CFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E993C187-70E8-4170-9F49-90610216256C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E993C187-70E8-4170-9F49-90610216256C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E993C187-70E8-4170-9F49-90610216256C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E993C187-70E8-4170-9F49-90610216256C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
