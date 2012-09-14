@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Shell;
 using NLog;
 using NLog.Config;
 using NLog.Layouts;
@@ -73,15 +74,21 @@ namespace NuUpdate.Installer {
             progressBar.Minimum = 0;
             progressBar.Maximum = 105;
             progressBar.IsIndeterminate = false;
+            TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
 
             var updateInfo = task.Result;
             lblProgress.Text = "Downloading version " + updateInfo.Version + " of " + PACKAGE_ID;
             _logger.Info("Started downloading package version " + updateInfo.Version);
-            _updateManager.DownloadPackage(updateInfo, percentCompleted => Dispatcher.BeginInvoke((Action)(() => progressBar.Value = percentCompleted))).ContinueWith(OnDownloadPackageCompleted, TaskScheduler.FromCurrentSynchronizationContext());
+            _updateManager.DownloadPackage(updateInfo, percentCompleted => Dispatcher.BeginInvoke((Action)(() => {
+                progressBar.Value = percentCompleted;
+                TaskbarItemInfo.ProgressValue = percentCompleted / progressBar.Maximum;
+            }))).ContinueWith(OnDownloadPackageCompleted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void OnDownloadPackageCompleted(Task<UpdateInfo> task) {
             progressBar.Value = 100;
+            TaskbarItemInfo.ProgressValue = 100 / progressBar.Maximum;
+
             var updateInfo = task.Result;
             lblProgress.Text = "Installing version " + updateInfo.Version + " of " + PACKAGE_ID;
             _logger.Info("Applying version " + updateInfo.Version);
@@ -90,6 +97,8 @@ namespace NuUpdate.Installer {
 
         private void OnApplyUpdateCompleted(Task task) {
             progressBar.Value = progressBar.Maximum;
+            TaskbarItemInfo.ProgressValue = 1;
+
             lblProgress.Text = "Installed successfully";
             btnStart.Content = "Close";
             btnStart.IsEnabled = true;

@@ -4,6 +4,9 @@
         Height="350" Width="400"
         SizeToContent="Height"
         ResizeMode="NoResize" Icon="Setup_Install.ico">
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo />
+    </Window.TaskbarItemInfo>
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
