@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Target Name="EmbedReferencedAssemblies" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <!-- get list of assemblies marked as CopyToLocal -->
+      <AssembliesToEmbed Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.dll'"/>
+     
+      <!-- add these assemblies to the list of embedded resources -->
+      <EmbeddedResource Include="@(AssembliesToEmbed)">
+        <LogicalName>%(Filename)%(Extension)</LogicalName>
+      </EmbeddedResource>
+
+      <!-- no need to copy the assmblies locally anymore -->
+      <ReferenceCopyLocalPaths Remove="@(AssembliesToEmbed)"/>
+    </ItemGroup>
+
+    <Message Importance="high" Text="Embedding: @(AssembliesToEmbed->'%(Filename)%(Extension)', ', ')"/>
+  </Target>
+</Project>
