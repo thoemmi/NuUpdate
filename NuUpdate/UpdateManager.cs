@@ -36,6 +36,11 @@ namespace NuUpdate {
             _packageRepository = packageRepository;
             _appPathBase = appPathBase ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), _packageId);
 
+            _logger.Debug("Package id:      " + packageId);
+            _logger.Debug("Current version: " + (currentVersion != null ? currentVersion .ToString() : "<none>"));
+            _logger.Debug("Package source:  " + packageRepository.Source);
+            _logger.Debug("Target folder:   " + _appPathBase);
+
             Environment.SetEnvironmentVariable("NuGetCachePath", nuGetCachePath ?? Path.Combine(_appPathBase, "packages"));
 
             var progressProvider = _packageRepository as IProgressProvider;
