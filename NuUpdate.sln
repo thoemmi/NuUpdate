@@ -21,6 +21,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoApp.V2", "Demos\DemoApp.V2\DemoApp.V2.csproj", "{A175855D-2878-4221-8B02-1A7BDCDA4CFE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuUpdate.Installer", "NuUpdate.Installer\NuUpdate.Installer.csproj", "{E993C187-70E8-4170-9F49-90610216256C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01798A15-C9F6-4772-955B-771066459F7D} = {01798A15-C9F6-4772-955B-771066459F7D}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuUpdate.Installer.Preparer", "NuUpdate.Installer.Preparer\NuUpdate.Installer.Preparer.csproj", "{01798A15-C9F6-4772-955B-771066459F7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,6 +57,10 @@ Global
 		{E993C187-70E8-4170-9F49-90610216256C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E993C187-70E8-4170-9F49-90610216256C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E993C187-70E8-4170-9F49-90610216256C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01798A15-C9F6-4772-955B-771066459F7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01798A15-C9F6-4772-955B-771066459F7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01798A15-C9F6-4772-955B-771066459F7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01798A15-C9F6-4772-955B-771066459F7D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

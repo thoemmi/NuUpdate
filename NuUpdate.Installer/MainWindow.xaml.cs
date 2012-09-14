@@ -9,6 +9,7 @@ using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
 using NLog.Targets.Wrappers;
+using NuUpdate.Installer.Interop;
 
 namespace NuUpdate.Installer {
     /// <summary>
@@ -17,32 +18,86 @@ namespace NuUpdate.Installer {
     public partial class MainWindow {
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private readonly IUpdateManager _updateManager;
-        private const string PACKAGE_ID = "DemoApp";
-        private const string PACKAGE_SOURCE = "http://localhost:8084/nuget/";
+        private readonly string _packageId;
+        private readonly string _packageSource;
 
         public MainWindow() {
             InitializeComponent();
-            ConfigureLogging(PACKAGE_ID);
-            _updateManager = new UpdateManager(PACKAGE_ID, null, PACKAGE_SOURCE);
 
-            Title = PACKAGE_ID + " Installer";
-            lblProgress.Text = PACKAGE_ID + " will be installed once you press Start.";
+            var logfile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName(), "installer.log");
+            ConfigureLogging(logfile);
+            _logger.Info("----------------------------------");
+            _logger.Info("Installer started");
+            if (Debugger.IsAttached) {
+                _logger.Debug("Logfile is " + logfile);
+            }
+
+            var s = Win32ResourceManager.ReadRessource<string>(GetType().Assembly.Location, 1711);
+            if (String.IsNullOrEmpty(s)) {
+                _logger.Error("Win32 resource specifying package id and source not found.");
+                MessageBox.Show("This is not a valid installer. See\n" + logfile + "\nfor details.", "Installer", MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                Close();
+                return;
+            }
+            _logger.Debug("Read \"{0}\" from Win32 resource");
+
+            var parts = s.Split('|');
+            if (parts.Length != 2) {
+                _logger.Error("Win32 resource does not specify package id and source.");
+                MessageBox.Show("This is not a valid installer. See\n" + logfile + "\nfor details.", "Installer", MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                Close();
+                return;
+            }
+            if (!IsUriValid(parts[1])) {
+                _logger.Error("The package source URI \"{0}\" is invalid", parts[1]);
+                MessageBox.Show("This is not a valid installer. See\n" + logfile + "\nfor details.", "Installer", MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                Close();
+                return;
+            }
+
+            _packageId = parts[0];
+            _packageSource = parts[1];
+
+            _logger.Info("Detected package id:     " + _packageId);
+            _logger.Info("Detected package source: " + _packageSource);
+
+            var oldLogFile = logfile;
+            logfile = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                _packageId,
+                "install.log");
+
+            _logger.Info("Switching to application specific log file " + logfile);
+
+            ConfigureLogging(logfile);
+            _logger.Info("----------------------------------");
+            _logger.Info("Installer started");
+            _logger.Debug("Previous logfile was " + oldLogFile);
+
+            _updateManager = new UpdateManager(_packageId, null, _packageSource);
+
+            Title = _packageId + " Installer";
+            lblProgress.Text = _packageId + " will be installed once you press Start.";
         }
 
-        private static void ConfigureLogging(string packageName) {
-            var dataFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                packageName);
+        private static bool IsUriValid(string url) {
+            Uri dummyUri;
+            return Uri.TryCreate(url, UriKind.Absolute, out dummyUri);
+        }
 
-            var fileTarget2 = new FileTarget {
-                FileName = Path.Combine(dataFolder, "install.log"),
+        private static void ConfigureLogging(string logFileName) {
+            var fileTarget = new FileTarget {
+                FileName = logFileName,
                 Layout = new SimpleLayout("${longdate} - ${message} ${exception:format=tostring}")
             };
-            var fileTarget = new AsyncTargetWrapper(fileTarget2);
+            var asyncTarget = new AsyncTargetWrapper(fileTarget);
 
             var config = new LoggingConfiguration();
-            config.AddTarget("file", fileTarget);
-            var rule1 = new LoggingRule("*", LogLevel.Debug, fileTarget);
+            config.AddTarget("file", asyncTarget);
+            var rule1 = new LoggingRule("*", LogLevel.Debug, asyncTarget);
             config.LoggingRules.Add(rule1);
 
             if (Debugger.IsAttached) {
@@ -53,18 +108,12 @@ namespace NuUpdate.Installer {
             }
 
             LogManager.Configuration = config;
-
-            PresentationTraceSources.DataBindingSource.Listeners.Add(new NLogTraceListener());
-
-            _logger.Info("----------------------------------");
-            _logger.Info("Installer {0} started", packageName);
         }
-
 
         private void BtnStartClick1(object sender, RoutedEventArgs e) {
             btnStart.IsEnabled = false;
             progressBar.IsIndeterminate = true;
-            lblProgress.Text = "Checking for latest package of " + PACKAGE_ID;
+            lblProgress.Text = "Checking for latest package of " + _packageId;
 
             _logger.Info("Started checking for updates");
             _updateManager.CheckForUpdate().ContinueWith(OnCheckForUpdateCompleted, TaskScheduler.FromCurrentSynchronizationContext());
@@ -77,20 +126,20 @@ namespace NuUpdate.Installer {
             TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
 
             var updateInfo = task.Result;
-            lblProgress.Text = "Downloading version " + updateInfo.Version + " of " + PACKAGE_ID;
+            lblProgress.Text = "Downloading version " + updateInfo.Version + " of " + _packageId;
             _logger.Info("Started downloading package version " + updateInfo.Version);
-            _updateManager.DownloadPackage(updateInfo, percentCompleted => Dispatcher.BeginInvoke((Action)(() => {
+            _updateManager.DownloadPackage(updateInfo, percentCompleted => Dispatcher.BeginInvoke((Action) (() => {
                 progressBar.Value = percentCompleted;
-                TaskbarItemInfo.ProgressValue = percentCompleted / progressBar.Maximum;
+                TaskbarItemInfo.ProgressValue = percentCompleted/progressBar.Maximum;
             }))).ContinueWith(OnDownloadPackageCompleted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void OnDownloadPackageCompleted(Task<UpdateInfo> task) {
             progressBar.Value = 100;
-            TaskbarItemInfo.ProgressValue = 100 / progressBar.Maximum;
+            TaskbarItemInfo.ProgressValue = 100/progressBar.Maximum;
 
             var updateInfo = task.Result;
-            lblProgress.Text = "Installing version " + updateInfo.Version + " of " + PACKAGE_ID;
+            lblProgress.Text = "Installing version " + updateInfo.Version + " of " + _packageId;
             _logger.Info("Applying version " + updateInfo.Version);
             _updateManager.ApplyUpdate(updateInfo).ContinueWith(OnApplyUpdateCompleted, TaskScheduler.FromCurrentSynchronizationContext());
         }
