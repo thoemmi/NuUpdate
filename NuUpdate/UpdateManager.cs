@@ -156,6 +156,9 @@ namespace NuUpdate {
                         try {
                             var lnkFilename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), shortcut.Title + ".lnk");
                             var target = Path.Combine(appPath, shortcut.TargetPath);
+                            if (!File.Exists(target)) {
+                                _logger.Warn("File \"{0}\" does not exist, nevertheless we'll create the shortcut.");
+                            }
                             new ShellLink {
                                 Target = target,
                                 Description = shortcut.Description,
