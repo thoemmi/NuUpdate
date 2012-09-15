@@ -200,8 +200,7 @@ namespace NuUpdate {
                     + GetFolderSize(_nuGetCachePath)
                     + new FileInfo(installPath).Length) >> 10;
                 using (
-                    var keyUninstall =
-                        Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", true)) {
+                    var keyUninstall = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", true)) {
                     using (var key = keyUninstall.OpenSubKey(_packageId, true) ?? keyUninstall.CreateSubKey(_packageId)) {
                         if (updateInfo.Package.IconUrl != null) {
                             key.SetValue("DisplayIcon", updateInfo.Package.IconUrl);
