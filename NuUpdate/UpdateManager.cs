@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Win32;
 using NLog;
 using NuGet;
+using NuUpdate.Interop;
 
 namespace NuUpdate {
     public class UpdateManager : IUpdateManager {
@@ -140,6 +141,19 @@ namespace NuUpdate {
                         }
                     }
                 }
+                return updateInfo;
+            });
+        }
+
+        public Task<UpdateInfo> CreateShortcuts(UpdateInfo updateInfo) {
+            return Task.Factory.StartNew(() => {
+                var path = GetAppPath(updateInfo);
+                foreach (var exePath in Directory.EnumerateFiles(path, "*.exe")) {
+                    new ShellLink {
+                        Target = exePath
+                    }.Save(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), Path.GetFileNameWithoutExtension(exePath) + ".lnk"));
+                }
+                
                 return updateInfo;
             });
         }

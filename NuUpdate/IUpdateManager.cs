@@ -9,6 +9,8 @@ namespace NuUpdate {
 
         Task<UpdateInfo> ApplyUpdate(UpdateInfo updateInfo);
 
+        Task<UpdateInfo> CreateShortcuts(UpdateInfo updateInfo);
+
         Task<UpdateInfo> UpdateUninstallInformation(UpdateInfo updateInfo);
 
         string AppPathBase { get; }

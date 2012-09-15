@@ -150,7 +150,11 @@ namespace NuUpdate.Installer {
             File.Copy(GetType().Assembly.Location, setupPath, true);
 
             var updateInfo = task.Result;
-            _updateManager.UpdateUninstallInformation(updateInfo).ContinueWith(UpdateUninstallInformation, TaskScheduler.FromCurrentSynchronizationContext());
+
+
+            _updateManager
+                .CreateShortcuts(updateInfo).ContinueWith(t => 
+                _updateManager.UpdateUninstallInformation(updateInfo).ContinueWith(UpdateUninstallInformation, TaskScheduler.FromCurrentSynchronizationContext()));
         }
 
         private void UpdateUninstallInformation(Task<UpdateInfo> updateInfo) {
