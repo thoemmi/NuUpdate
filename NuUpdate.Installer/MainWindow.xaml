@@ -21,6 +21,7 @@
             x:Name="progressBar" 
             Margin="8 4"
             Height="10"
+            Minimum="0" Maximum="110" Value="0"
             Grid.Row="1"/>
         <Button 
             x:Name="btnStart" 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Win32;
 using NLog;
 using NuGet;
 
@@ -14,6 +15,7 @@ namespace NuUpdate {
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private readonly IPackageRepository _packageRepository;
         private readonly string _appPathBase;
+        private readonly string _nuGetCachePath;
 
         private UpdateInfo _latestPackage;
         private List<UpdateInfo> _availableUpdates = new List<UpdateInfo>();
@@ -35,13 +37,14 @@ namespace NuUpdate {
             _currentVersion = currentVersion;
             _packageRepository = packageRepository;
             _appPathBase = appPathBase ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), _packageId);
+            _nuGetCachePath = nuGetCachePath ?? Path.Combine(_appPathBase, "packages");
 
             _logger.Debug("Package id:      " + packageId);
             _logger.Debug("Current version: " + (currentVersion != null ? currentVersion .ToString() : "<none>"));
             _logger.Debug("Package source:  " + packageRepository.Source);
             _logger.Debug("Target folder:   " + _appPathBase);
 
-            Environment.SetEnvironmentVariable("NuGetCachePath", nuGetCachePath ?? Path.Combine(_appPathBase, "packages"));
+            Environment.SetEnvironmentVariable("NuGetCachePath", _nuGetCachePath);
 
             var progressProvider = _packageRepository as IProgressProvider;
             if (progressProvider != null) {
@@ -52,6 +55,10 @@ namespace NuUpdate {
             if (httpClientEvents != null) {
                 httpClientEvents.SendingRequest += (sender, args) => _logger.Info("requesting {0}", args.Request.RequestUri);
             }
+        }
+
+        public string AppPathBase {
+            get { return _appPathBase; }
         }
 
         private void ProgressProviderOnProgressAvailable(object sender, ProgressEventArgs args) {
@@ -109,7 +116,7 @@ namespace NuUpdate {
             });
         }
 
-        public Task ApplyUpdate(UpdateInfo updateInfo) {
+        public Task<UpdateInfo> ApplyUpdate(UpdateInfo updateInfo) {
             return Task.Factory.StartNew(() => {
                 var targetFolder = GetAppPath(updateInfo);
                 _logger.Info("Target path is " + targetFolder);
@@ -133,7 +140,46 @@ namespace NuUpdate {
                         }
                     }
                 }
+                return updateInfo;
             });
+        }
+
+        public Task<UpdateInfo> UpdateUninstallInformation(UpdateInfo updateInfo) {
+            return Task.Factory.StartNew(() => {
+                var installPath = Path.Combine(_appPathBase, "install.exe");
+                var estimatedSize = (
+                    GetFolderSize(GetAppPath(updateInfo)) 
+                    + GetFolderSize(_nuGetCachePath)
+                    + new FileInfo(installPath).Length) >> 10;
+                using (
+                    var keyUninstall =
+                        Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", true)) {
+                    using (var key = keyUninstall.OpenSubKey(_packageId, true) ?? keyUninstall.CreateSubKey(_packageId)) {
+                        if (updateInfo.Package.IconUrl != null) {
+                            key.SetValue("DisplayIcon", updateInfo.Package.IconUrl);
+                        } else {
+                            key.SetValue("DisplayIcon", installPath + ",0");
+                        }
+                        key.SetValue("DisplayName", updateInfo.Package.Id, RegistryValueKind.String);
+                        key.SetValue("DisplayVersion", updateInfo.Version.ToString(), RegistryValueKind.String);
+                        key.SetValue("InstallDate", DateTimeOffset.Now.ToString("yyyyMMdd"));
+                        key.SetValue("UninstallString", installPath + " /uninstall", RegistryValueKind.ExpandString);
+                        key.SetValue("InstallLocation", _appPathBase, RegistryValueKind.ExpandString);
+                        key.SetValue("Publisher", String.Join(", ", updateInfo.Package.Authors), RegistryValueKind.String);
+                        key.SetValue("VersionMajor", updateInfo.Version.Version.Major, RegistryValueKind.DWord);
+                        key.SetValue("VersionMinor", updateInfo.Version.Version.Minor, RegistryValueKind.DWord);
+                        key.SetValue("EstimatedSize", estimatedSize, RegistryValueKind.DWord);
+                        key.SetValue("NoModify", 1, RegistryValueKind.DWord);
+                    }
+                }
+                return updateInfo;
+            });
+        }
+
+        private long GetFolderSize(string path) {
+            return Directory.EnumerateDirectories(path).Select(GetFolderSize)
+                .Concat(Directory.EnumerateFiles(path).Select(filename => new FileInfo(filename).Length))
+                .Sum();
         }
 
         private string GetAppPath(UpdateInfo updateInfo) {

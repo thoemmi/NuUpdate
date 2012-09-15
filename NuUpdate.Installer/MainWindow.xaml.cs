@@ -120,8 +120,6 @@ namespace NuUpdate.Installer {
         }
 
         private void OnCheckForUpdateCompleted(Task<UpdateInfo> task) {
-            progressBar.Minimum = 0;
-            progressBar.Maximum = 105;
             progressBar.IsIndeterminate = false;
             TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
 
@@ -144,10 +142,20 @@ namespace NuUpdate.Installer {
             _updateManager.ApplyUpdate(updateInfo).ContinueWith(OnApplyUpdateCompleted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        private void OnApplyUpdateCompleted(Task task) {
-            progressBar.Value = progressBar.Maximum;
-            TaskbarItemInfo.ProgressValue = 1;
+        private void OnApplyUpdateCompleted(Task<UpdateInfo> task) {
+            progressBar.Value = 105;
+            TaskbarItemInfo.ProgressValue = progressBar.Value / progressBar.Maximum;
 
+            var setupPath = Path.GetFullPath(Path.Combine(_updateManager.AppPathBase, "install.exe"));
+            File.Copy(GetType().Assembly.Location, setupPath, true);
+
+            var updateInfo = task.Result;
+            _updateManager.UpdateUninstallInformation(updateInfo).ContinueWith(UpdateUninstallInformation, TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        private void UpdateUninstallInformation(Task<UpdateInfo> updateInfo) {
+            progressBar.Value = progressBar.Maximum;
+            TaskbarItemInfo.ProgressValue = 1.0;
             lblProgress.Text = "Installed successfully";
             btnStart.Content = "Close";
             btnStart.IsEnabled = true;

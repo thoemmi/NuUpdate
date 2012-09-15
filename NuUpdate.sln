@@ -15,6 +15,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuUpdate.NuGetTestServer", "NuUpdate.NuGetTestServer\NuUpdate.NuGetTestServer.csproj", "{C1599B21-E3D3-4399-B4C8-97C51C3EC529}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{6A48C02C-AA18-4539-8EA7-71A7963BAA3C}"
+	ProjectSection(SolutionItems) = preProject
+		StartIISExpress.ps1 = StartIISExpress.ps1
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoApp.V1", "Demos\DemoApp.V1\DemoApp.V1.csproj", "{C0C0ACE7-A31F-4821-A1A9-995A0B43D4BF}"
 EndProject
