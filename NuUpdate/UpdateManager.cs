@@ -147,13 +147,44 @@ namespace NuUpdate {
 
         public Task<UpdateInfo> CreateShortcuts(UpdateInfo updateInfo) {
             return Task.Factory.StartNew(() => {
-                var path = GetAppPath(updateInfo);
-                foreach (var exePath in Directory.EnumerateFiles(path, "*.exe")) {
-                    new ShellLink {
-                        Target = exePath
-                    }.Save(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), Path.GetFileNameWithoutExtension(exePath) + ".lnk"));
+
+                var appPath = GetAppPath(updateInfo);
+
+                var instructions = updateInfo.GetUpdateInstructions();
+                if (instructions != null && instructions.Shortcuts != null && instructions.Shortcuts.Length > 0) {
+                    foreach (var shortcut in instructions.Shortcuts) {
+                        try {
+                            var lnkFilename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), shortcut.Title + ".lnk");
+                            var target = Path.Combine(appPath, shortcut.TargetPath);
+                            new ShellLink {
+                                Target = target,
+                                Description = shortcut.Description,
+                                Arguments = shortcut.Arguments,
+                                IconPath = shortcut.IconPath,
+                                IconIndex = shortcut.IconIndex,
+                            }.Save(lnkFilename);
+                            _logger.Info("Created shortcut for \"{0}\" at \"{1}\".", target, lnkFilename);
+                        }
+                        catch (Exception ex) {
+                            _logger.ErrorException(String.Format("Creating shortcut for \"{0}\" failed", shortcut.TargetPath), ex);
+                        }
+                    }
+                } else {
+                    _logger.Info("No update instructions found, creating a shortcut for each executable in start menu.");
+                    foreach (var exePath in Directory.EnumerateFiles(appPath, "*.exe")) {
+                        try {
+                            var lnkFilename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), Path.GetFileNameWithoutExtension(exePath) + ".lnk");
+                            new ShellLink {
+                                Target = exePath
+                            }.Save(lnkFilename);
+                            _logger.Info("Created shortcut for \"{0}\" at \"{1}\".", exePath, lnkFilename);
+                        }
+                        catch (Exception ex) {
+                            _logger.ErrorException(String.Format("Creating shortcut for \"{0}\" failed", exePath), ex);
+                        }
+                    }
                 }
-                
+
                 return updateInfo;
             });
         }
