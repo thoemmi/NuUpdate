@@ -116,6 +116,16 @@ namespace NuUpdate {
             });
         }
 
+        private static IEnumerable<Tuple<IPackageFile, string>> GetFiles(IPackage package) {
+            // TODO: net40 is hard-coded. Some day more frameworks should be supported
+            foreach (var packageFile in package.GetLibFiles()) {
+                yield return new Tuple<IPackageFile, string>(packageFile, packageFile.Path.Substring(@"lib\net40\".Length));
+            }
+            foreach (var packageFile in package.GetContentFiles()) {
+                yield return new Tuple<IPackageFile, string>(packageFile, packageFile.Path.Substring(@"content\".Length));
+            }
+        }
+
         public Task<UpdateInfo> ApplyUpdate(UpdateInfo updateInfo) {
             return Task.Factory.StartNew(() => {
                 var targetFolder = _pathProvider.GetAppPath(updateInfo);
@@ -126,15 +136,14 @@ namespace NuUpdate {
                 }
                 Directory.CreateDirectory(targetFolder);
 
-                foreach (var contentFile in updateInfo.Package.GetLibFiles()) {
-                    _logger.Info("Extracting " + contentFile.Path);
-                    // TODO: net40 is hard-coded. Some day more frameworks should be supported
-                    var targetPath = Path.Combine(targetFolder, contentFile.Path.Substring(@"lib\net40\".Length));
+                foreach (var contentFile in GetFiles(updateInfo.Package)) {
+                    _logger.Info("Extracting " + contentFile.Item1.Path);
+                    var targetPath = Path.Combine(targetFolder, contentFile.Item2);
                     var targetDir = Path.GetDirectoryName(targetPath);
                     if (targetDir != null && !Directory.Exists(targetDir)) {
                         Directory.CreateDirectory(targetDir);
                     }
-                    using (var input = contentFile.GetStream()) {
+                    using (var input = contentFile.Item1.GetStream()) {
                         using (var output = File.Create(targetPath)) {
                             input.CopyTo(output);
                         }
