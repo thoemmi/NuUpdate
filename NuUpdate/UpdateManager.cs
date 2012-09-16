@@ -124,12 +124,18 @@ namespace NuUpdate {
         }
 
         private static IEnumerable<Tuple<IPackageFile, string>> GetFiles(IPackage package) {
-            // TODO: net40 is hard-coded. Some day more frameworks should be supported
-            foreach (var packageFile in package.GetLibFiles()) {
-                yield return new Tuple<IPackageFile, string>(packageFile, packageFile.Path.Substring(@"lib\net40\".Length));
-            }
-            foreach (var packageFile in package.GetContentFiles()) {
-                yield return new Tuple<IPackageFile, string>(packageFile, packageFile.Path.Substring(@"content\".Length));
+            if (package.GetLibFiles().IsEmpty() && package.GetContentFiles().IsEmpty()) {
+                foreach (var packageFile in package.GetFiles()) {
+                    yield return new Tuple<IPackageFile, string>(packageFile, packageFile.Path);
+                }
+            } else {
+                // TODO: net40 is hard-coded. Some day more frameworks should be supported
+                foreach (var packageFile in package.GetLibFiles()) {
+                    yield return new Tuple<IPackageFile, string>(packageFile, packageFile.Path.Substring(@"lib\net40\".Length));
+                }
+                foreach (var packageFile in package.GetContentFiles()) {
+                    yield return new Tuple<IPackageFile, string>(packageFile, packageFile.Path.Substring(@"content\".Length));
+                }
             }
         }
 
