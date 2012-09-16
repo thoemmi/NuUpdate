@@ -54,6 +54,7 @@
     <Compile Include="Interop\ShellLink.cs" />
     <Compile Include="IUpdateManager.cs" />
     <Compile Include="NuUpdateInfo.cs" />
+    <Compile Include="PathProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UpdateInfo.cs" />
     <Compile Include="UpdateManager.cs" />
