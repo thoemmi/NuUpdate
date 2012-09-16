@@ -61,7 +61,14 @@ namespace NuUpdate {
             get { return _pathProvider.AppPathBase; }
         }
 
+        private int _lastPercentComplete = -1;
+
         private void ProgressProviderOnProgressAvailable(object sender, ProgressEventArgs args) {
+            if (_lastPercentComplete == args.PercentComplete) {
+                return;
+            }
+            _lastPercentComplete = args.PercentComplete;
+
             _logger.Info("{0}: {1}", args.Operation, args.PercentComplete);
 
             var handler = ProgressAvailable;
