@@ -16,7 +16,10 @@ namespace NuUpdate {
         }
 
         private IEnumerable<Shortcut> GetShortcuts(UpdateInfo updateInfo) {
-            var instructions = updateInfo.GetUpdateInstructions();
+            var nuUpdateConfigPath = Path.Combine(_pathProvider.GetAppPath(updateInfo), "NuUpdate.xml");
+            var instructions = File.Exists(nuUpdateConfigPath)
+                ? UpdateInstructions.Load(nuUpdateConfigPath) 
+                : null;
             if (instructions != null && instructions.Shortcuts != null && instructions.Shortcuts.Length > 0) {
                 _logger.Info("Found shortcut information in update instructions.");
                 return instructions.Shortcuts;
