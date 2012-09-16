@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using NLog;
 using NuGet;
-using NuUpdate.Interop;
 
 namespace NuUpdate {
     public class UpdateManager : IUpdateManager {
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
-
+        private static readonly TaskScheduler _taskScheduler = TaskScheduler.Default;
         private readonly string _packageId;
         private readonly Version _currentVersion;
         private readonly IPackageRepository _packageRepository;
@@ -95,7 +95,7 @@ namespace NuUpdate {
                 }
 
                 return _latestPackage;
-            });
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
         }
 
         public Task<UpdateInfo> DownloadPackage(UpdateInfo updateInfo, Action<int> callbackPercentCompleted = null) {
@@ -113,7 +113,7 @@ namespace NuUpdate {
                 }
 
                 return updateInfo;
-            });
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
         }
 
         private static IEnumerable<Tuple<IPackageFile, string>> GetFiles(IPackage package) {
@@ -150,7 +150,7 @@ namespace NuUpdate {
                     }
                 }
                 return updateInfo;
-            });
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
         }
 
         public Task<UpdateInfo> CreateShortcuts(UpdateInfo updateInfo) {
@@ -159,7 +159,7 @@ namespace NuUpdate {
                 new ShortcutHandler(_pathProvider).CreateShortcuts(updateInfo);
 
                 return updateInfo;
-            });
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
         }
 
         public Task<UpdateInfo> UpdateUninstallInformation(UpdateInfo updateInfo) {
@@ -190,10 +190,10 @@ namespace NuUpdate {
                     }
                 }
                 return updateInfo;
-            });
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
         }
 
-        private long GetFolderSize(string path) {
+        private static long GetFolderSize(string path) {
             return Directory.EnumerateDirectories(path).Select(GetFolderSize)
                 .Concat(Directory.EnumerateFiles(path).Select(filename => new FileInfo(filename).Length))
                 .Sum();
