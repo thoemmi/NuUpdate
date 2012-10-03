@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -184,7 +185,9 @@ namespace NuUpdate {
                     + new FileInfo(installPath).Length) >> 10;
                 using (
                     var keyUninstall = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", true)) {
+                    Debug.Assert(keyUninstall != null, "keyUninstall != null");
                     using (var key = keyUninstall.OpenSubKey(_packageId, true) ?? keyUninstall.CreateSubKey(_packageId)) {
+                        Debug.Assert(key != null, "key != null");
                         if (updateInfo.Package.IconUrl != null) {
                             key.SetValue("DisplayIcon", updateInfo.Package.IconUrl);
                         } else {
