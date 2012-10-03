@@ -101,7 +101,9 @@ namespace NuUpdate.Installer {
             config.LoggingRules.Add(rule1);
 
             if (Debugger.IsAttached) {
-                var debuggerTarget = new DebuggerTarget();
+                var debuggerTarget = new DebuggerTarget {
+                    Layout = new SimpleLayout("${logger}: ${level:uppercase=true} ${message}${onexception:inner=${newline}${exception:format=tostring:maxInnerExceptionLevel=10}}")
+                };
                 config.AddTarget("debugger", debuggerTarget);
                 var rule2 = new LoggingRule("*", LogLevel.Debug, debuggerTarget);
                 config.LoggingRules.Add(rule2);
