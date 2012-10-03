@@ -26,6 +26,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuUpdate.Installer", "NuUpdate.Installer\NuUpdate.Installer.csproj", "{E993C187-70E8-4170-9F49-90610216256C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01798A15-C9F6-4772-955B-771066459F7D} = {01798A15-C9F6-4772-955B-771066459F7D}
+		{C0C0ACE7-A31F-4821-A1A9-995A0B43D4BF} = {C0C0ACE7-A31F-4821-A1A9-995A0B43D4BF}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuUpdate.Installer.Preparer", "NuUpdate.Installer.Preparer\NuUpdate.Installer.Preparer.csproj", "{01798A15-C9F6-4772-955B-771066459F7D}"

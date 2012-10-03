@@ -120,7 +120,7 @@
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <Import Project="PreBuild.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"$(SolutionDir)NuUpdate.Installer.Preparer\bin\Debug\NuUpdate.Installer.Preparer.exe" "$(TargetPath)" DemoApp http://localhost:8084/nuget/</PostBuildEvent>
+    <PostBuildEvent>"$(SolutionDir)NuUpdate.Installer.Preparer\bin\Debug\NuUpdate.Installer.Preparer.exe" "$(TargetPath)" DemoApp http://localhost:8084/nuget/ "$(SolutionDir)NuUpdate.NuGetTestServer\Packages\DemoApp.1.0.0.0.nupkg"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
