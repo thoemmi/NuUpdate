@@ -28,7 +28,7 @@
           _SemanticVersion = major + "." + minor + "." + patch;
           _Commit = match.Groups["commit"].Value;
           if (revision != 0) {
-            _SemanticVersion += "-beta." + revision + "-" + _Commit;
+            _SemanticVersion += "-beta-" + revision;
           }
         ]]>
       </Code>
@@ -93,7 +93,7 @@
       <VersionString Condition="'$(VersionString)'==''">0.0.0.0</VersionString>
     </PropertyGroup>
 
-    <Message Importance="High" Text="Creating CommonVersionInfo.cs with version $(VersionString) $(Commit)" />
+    <Message Importance="High" Text="Creating CommonVersionInfo.cs with version $(SemanticVersionString)" />
 
     <WriteLinesToFile Overwrite="true" File="$(ProjectDir)CommonAssemblyInfo.cs" Encoding="UTF-8" Lines='using System.Reflection%3B
 
