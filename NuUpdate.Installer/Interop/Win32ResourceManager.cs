@@ -72,7 +72,7 @@ namespace NuUpdate.Installer.Interop {
             }
         }
 
-        public static T ReadRessource<T>(string fileName, int resourceId, bool throwOnException = false) where T : class {
+        public static T ReadRessource<T>(string fileName, int resourceId, bool throwOnException = false) {
             var bytes = ReadRessource(fileName, resourceId, throwOnException);
             if (bytes != null) {
                 var serializer = new XmlSerializer(typeof (T));
@@ -80,7 +80,7 @@ namespace NuUpdate.Installer.Interop {
                     return (T) serializer.Deserialize(ms);
                 }
             } else {
-                return null;
+                return default(T);
             }
         }
 
