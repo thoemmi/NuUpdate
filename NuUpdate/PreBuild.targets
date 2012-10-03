@@ -9,7 +9,7 @@
       <VersionString ParameterType="System.String" Required="true" />
       <Version ParameterType="System.String" Output="true" />
       <Commit ParameterType="System.String" Output="true" />
-      <VersionSuffix ParameterType="System.String" Output="true" />
+      <SemanticVersion ParameterType="System.String" Output="true" />
     </ParameterGroup>
     <Task>
       <!--<Reference Include="" />-->
@@ -25,8 +25,11 @@
           Int32.TryParse(match.Groups["patch"].Value, out patch);
           Int32.TryParse(match.Groups["revision"].Value, out revision);
           _Version = new Version(major, minor, patch, revision).ToString();
-          _VersionSuffix = revision == 0 ? String.Empty : "-Beta";
+          _SemanticVersion = major + "." + minor + "." + patch;
           _Commit = match.Groups["commit"].Value;
+          if (revision != 0) {
+            _SemanticVersion += "-beta." + revision + "-" + _Commit;
+          }
         ]]>
       </Code>
     </Task>
@@ -83,7 +86,7 @@
     <GetVersion VersionString="@(OutputLines)" Condition="$(GitExists) And '$(ExitCode)'=='0'">
       <Output TaskParameter="Version" PropertyName="VersionString"/>
       <Output TaskParameter="Commit" PropertyName="Commit"/>
-      <Output TaskParameter="VersionSuffix" PropertyName="VersionSuffix"/>
+      <Output TaskParameter="SemanticVersion" PropertyName="SemanticVersionString"/>
     </GetVersion>
       
     <PropertyGroup>
@@ -97,7 +100,7 @@
 // full version: $(VersionString)-$(Commit)
 
 [assembly: AssemblyVersion("$(VersionString)")]
-[assembly: AssemblyInformationalVersion("$(VersionString)$(VersionSuffix)")] 
+[assembly: AssemblyInformationalVersion("$(SemanticVersionString)")] 
 [assembly: AssemblyFileVersion("$(VersionString)")]' />
     
   </Target>
