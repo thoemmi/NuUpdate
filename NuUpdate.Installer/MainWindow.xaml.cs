@@ -117,7 +117,9 @@ namespace NuUpdate.Installer {
             lblProgress.Text = "Checking for latest package of " + _packageId;
 
             _logger.Info("Started checking for updates");
-            _updateManager.CheckForUpdate().ContinueWith(OnCheckForUpdateCompleted, TaskScheduler.FromCurrentSynchronizationContext());
+            Task.Factory
+                .StartNew(() => _updateManager.CheckForUpdate())
+                .ContinueWith(OnCheckForUpdateCompleted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void OnCheckForUpdateCompleted(Task<UpdateInfo> task) {
@@ -127,10 +129,10 @@ namespace NuUpdate.Installer {
             var updateInfo = task.Result;
             lblProgress.Text = "Downloading version " + updateInfo.Version + " of " + _packageId;
             _logger.Info("Started downloading package version " + updateInfo.Version);
-            _updateManager.DownloadPackage(updateInfo, percentCompleted => Dispatcher.BeginInvoke((Action) (() => {
+            Task.Factory.StartNew(() => _updateManager.DownloadPackage(updateInfo, percentCompleted => Dispatcher.BeginInvoke((Action) (() => {
                 progressBar.Value = percentCompleted;
                 TaskbarItemInfo.ProgressValue = percentCompleted/progressBar.Maximum;
-            }))).ContinueWith(OnDownloadPackageCompleted, TaskScheduler.FromCurrentSynchronizationContext());
+            })))).ContinueWith(OnDownloadPackageCompleted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void OnDownloadPackageCompleted(Task<UpdateInfo> task) {
@@ -140,7 +142,9 @@ namespace NuUpdate.Installer {
             var updateInfo = task.Result;
             lblProgress.Text = "Installing version " + updateInfo.Version + " of " + _packageId;
             _logger.Info("Applying version " + updateInfo.Version);
-            _updateManager.ApplyUpdate(updateInfo).ContinueWith(OnApplyUpdateCompleted, TaskScheduler.FromCurrentSynchronizationContext());
+            Task.Factory
+                .StartNew(() => _updateManager.ApplyUpdate(updateInfo))
+                .ContinueWith(OnApplyUpdateCompleted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void OnApplyUpdateCompleted(Task<UpdateInfo> task) {
@@ -152,10 +156,10 @@ namespace NuUpdate.Installer {
 
             var updateInfo = task.Result;
 
-
-            _updateManager
-                .CreateShortcuts(updateInfo).ContinueWith(t => 
-                _updateManager.UpdateUninstallInformation(updateInfo).ContinueWith(UpdateUninstallInformation, TaskScheduler.FromCurrentSynchronizationContext()));
+            Task.Factory
+                .StartNew(()=> _updateManager.CreateShortcuts(updateInfo))
+                .ContinueWith(t => _updateManager.UpdateUninstallInformation(updateInfo))
+                .ContinueWith(UpdateUninstallInformation, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void UpdateUninstallInformation(Task<UpdateInfo> updateInfo) {
