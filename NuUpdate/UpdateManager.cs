@@ -105,7 +105,7 @@ namespace NuUpdate {
             return _latestPackage;
         }
 
-        public UpdateInfo DownloadPackage(UpdateInfo updateInfo, Action<int> callbackPercentCompleted = null) {
+        public void DownloadPackage(UpdateInfo updateInfo, Action<int> callbackPercentCompleted = null) {
             var onProgressAvailable = callbackPercentCompleted != null ? (sender, args) => callbackPercentCompleted(args.PercentComplete) : (EventHandler<ProgressEventArgs>)null;
             if (onProgressAvailable != null) {
                 ProgressAvailable += onProgressAvailable;
@@ -117,8 +117,6 @@ namespace NuUpdate {
             if (onProgressAvailable != null) {
                 ProgressAvailable -= onProgressAvailable;
             }
-
-            return updateInfo;
         }
 
         private static IEnumerable<Tuple<IPackageFile, string>> GetFiles(IPackage package) {
@@ -137,7 +135,7 @@ namespace NuUpdate {
             }
         }
 
-        public UpdateInfo ApplyUpdate(UpdateInfo updateInfo) {
+        public void ApplyUpdate(UpdateInfo updateInfo) {
             var targetFolder = _pathProvider.GetAppPath(updateInfo);
             _logger.Info("Target path is " + targetFolder);
 
@@ -159,16 +157,13 @@ namespace NuUpdate {
                     }
                 }
             }
-            return updateInfo;
         }
 
-        public UpdateInfo CreateShortcuts(UpdateInfo updateInfo) {
+        public void CreateShortcuts(UpdateInfo updateInfo) {
             new ShortcutHandler(_pathProvider).CreateShortcuts(updateInfo);
-
-            return updateInfo;
         }
 
-        public UpdateInfo UpdateUninstallInformation(UpdateInfo updateInfo) {
+        public void UpdateUninstallInformation(UpdateInfo updateInfo) {
             var installPath = Path.Combine(_pathProvider.AppPathBase, "install.exe");
             var estimatedSize = (
                 GetFolderSize(_pathProvider.GetAppPath(updateInfo))
@@ -196,7 +191,6 @@ namespace NuUpdate {
                     key.SetValue("NoModify", 1, RegistryValueKind.DWord);
                 }
             }
-            return updateInfo;
         }
 
         private static long GetFolderSize(string path) {

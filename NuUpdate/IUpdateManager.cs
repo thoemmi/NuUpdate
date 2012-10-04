@@ -4,13 +4,13 @@ namespace NuUpdate {
     public interface IUpdateManager {
         UpdateInfo CheckForUpdate(bool includePrereleases = false);
 
-        UpdateInfo DownloadPackage(UpdateInfo updateInfo, Action<int> callbackPercentCompleted = null);
+        void DownloadPackage(UpdateInfo updateInfo, Action<int> callbackPercentCompleted = null);
 
-        UpdateInfo ApplyUpdate(UpdateInfo updateInfo);
+        void ApplyUpdate(UpdateInfo updateInfo);
 
-        UpdateInfo CreateShortcuts(UpdateInfo updateInfo);
+        void CreateShortcuts(UpdateInfo updateInfo);
 
-        UpdateInfo UpdateUninstallInformation(UpdateInfo updateInfo);
+        void UpdateUninstallInformation(UpdateInfo updateInfo);
 
         string AppPathBase { get; }
     }

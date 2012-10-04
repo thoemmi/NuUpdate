@@ -135,37 +135,34 @@ namespace NuUpdate.Installer {
             }));
             Task.Factory
                 .StartNew(() => _updateManager.DownloadPackage(updateInfo, progressHandler))
-                .ContinueWith(OnDownloadPackageCompleted, TaskScheduler.FromCurrentSynchronizationContext());
+                .ContinueWith(_ => OnDownloadPackageCompleted(updateInfo), TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        private void OnDownloadPackageCompleted(Task<UpdateInfo> task) {
+        private void OnDownloadPackageCompleted(UpdateInfo updateInfo) {
             progressBar.Value = 100;
             TaskbarItemInfo.ProgressValue = 100/progressBar.Maximum;
 
-            var updateInfo = task.Result;
             lblProgress.Text = "Installing version " + updateInfo.Version + " of " + _packageId;
             _logger.Info("Applying version " + updateInfo.Version);
             Task.Factory
                 .StartNew(() => _updateManager.ApplyUpdate(updateInfo))
-                .ContinueWith(OnApplyUpdateCompleted, TaskScheduler.FromCurrentSynchronizationContext());
+                .ContinueWith(_ => OnApplyUpdateCompleted(updateInfo), TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        private void OnApplyUpdateCompleted(Task<UpdateInfo> task) {
+        private void OnApplyUpdateCompleted(UpdateInfo updateInfo) {
             progressBar.Value = 105;
             TaskbarItemInfo.ProgressValue = progressBar.Value / progressBar.Maximum;
 
             var setupPath = Path.GetFullPath(Path.Combine(_updateManager.AppPathBase, "install.exe"));
             File.Copy(GetType().Assembly.Location, setupPath, true);
 
-            var updateInfo = task.Result;
-
             Task.Factory
                 .StartNew(()=> _updateManager.CreateShortcuts(updateInfo))
-                .ContinueWith(t => _updateManager.UpdateUninstallInformation(updateInfo))
-                .ContinueWith(UpdateUninstallInformation, TaskScheduler.FromCurrentSynchronizationContext());
+                .ContinueWith(_ => _updateManager.UpdateUninstallInformation(updateInfo))
+                .ContinueWith(_ => UpdateUninstallInformationCompleted(), TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        private void UpdateUninstallInformation(Task<UpdateInfo> updateInfo) {
+        private void UpdateUninstallInformationCompleted() {
             progressBar.Value = progressBar.Maximum;
             TaskbarItemInfo.ProgressValue = 1.0;
             lblProgress.Text = "Installed successfully";
