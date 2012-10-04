@@ -11,26 +11,26 @@ namespace NuUpdate {
     public class UpdateManager : IUpdateManager {
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private readonly string _packageId;
-        private readonly Version _currentVersion;
+        private readonly SemanticVersion _currentVersion;
         private readonly IPackageRepository _packageRepository;
         private readonly PathProvider _pathProvider;
 
         private UpdateInfo _latestPackage;
         private List<UpdateInfo> _availableUpdates = new List<UpdateInfo>();
 
-        public UpdateManager(string packageId, Version currentVersion, string packageSource, string appPathBase = null)
+        public UpdateManager(string packageId, SemanticVersion currentVersion, string packageSource, string appPathBase = null)
             : this(packageId, currentVersion, packageSource, appPathBase, null) {
         }
 
-        public UpdateManager(string packageId, Version currentVersion, IPackageRepository packageRepository, string appPathBase = null)
+        public UpdateManager(string packageId, SemanticVersion currentVersion, IPackageRepository packageRepository, string appPathBase = null)
             : this(packageId, currentVersion, packageRepository, appPathBase, null) {
         }
 
-        internal UpdateManager(string packageId, Version currentVersion, string packageSource, string appPathBase, string nuGetCachePath)
+        internal UpdateManager(string packageId, SemanticVersion currentVersion, string packageSource, string appPathBase, string nuGetCachePath)
             : this(packageId, currentVersion, PackageRepositoryFactory.Default.CreateRepository(packageSource), appPathBase, nuGetCachePath) {
         }
 
-        internal UpdateManager(string packageId, Version currentVersion, IPackageRepository packageRepository, string appPathBase, string nuGetCachePath) {
+        internal UpdateManager(string packageId, SemanticVersion currentVersion, IPackageRepository packageRepository, string appPathBase, string nuGetCachePath) {
             _packageId = packageId;
             _currentVersion = currentVersion;
             _packageRepository = packageRepository;
@@ -83,7 +83,7 @@ namespace NuUpdate {
 
         public UpdateInfo CheckForUpdate(bool includePrereleases = false) {
             var versionSpec = _currentVersion != null
-                                    ? new VersionSpec { MinVersion = new SemanticVersion(_currentVersion), IsMinInclusive = false }
+                                    ? new VersionSpec { MinVersion = _currentVersion, IsMinInclusive = false }
                                     : null;
             var packages = _packageRepository.FindPackages(_packageId, versionSpec, includePrereleases, true).ToArray();
 

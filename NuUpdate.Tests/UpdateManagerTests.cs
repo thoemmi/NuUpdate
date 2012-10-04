@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Moq;
 using NUnit.Framework;
 using NuGet;
@@ -23,7 +22,7 @@ namespace NuUpdate.Tests {
         public void NoNewerReleasePackages() {
             var rep = GetLocalRepository();
 
-            var sut = new UpdateManager(APP_NAME, new Version(1, 1), rep);
+            var sut = new UpdateManager(APP_NAME, new SemanticVersion(1, 1, 0, 0), rep);
             sut.CheckForUpdate();
 
             Assert.AreEqual(0, sut.AvailableUpdates.Count());
@@ -33,7 +32,7 @@ namespace NuUpdate.Tests {
         public void FindPrereleasePackage() {
             var rep = GetLocalRepository();
 
-            var sut = new UpdateManager(APP_NAME, new Version(1, 1), rep);
+            var sut = new UpdateManager(APP_NAME, new SemanticVersion(1, 1, 0, 0), rep);
             sut.CheckForUpdate(includePrereleases: true);
 
             Assert.AreEqual(1, sut.AvailableUpdates.Count());
