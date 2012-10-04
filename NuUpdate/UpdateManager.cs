@@ -41,7 +41,11 @@ namespace NuUpdate {
 
             _logger.Debug("Package id:      " + packageId);
             _logger.Debug("Current version: " + (currentVersion != null ? currentVersion .ToString() : "<none>"));
-            _logger.Debug("Package source:  " + packageRepository.Source);
+            try {
+                _logger.Debug("Package source:  " + packageRepository.Source);
+            } catch (System.Net.WebException) {
+                _logger.Warn("Package source:  accessing packageRepository.Source failed, assuming the nuget feed isn't available");
+            }
             _logger.Debug("Target folder:   " + _pathProvider.AppPathBase);
             _logger.Debug("Cache folder:    " + _pathProvider.NuGetCachePath);
 
@@ -210,6 +214,10 @@ namespace NuUpdate {
         }
 
         private static long GetFolderSize(string path) {
+            if (!Directory.Exists(path)) {
+                return 0;
+            }
+
             return Directory.EnumerateDirectories(path).Select(GetFolderSize)
                 .Concat(Directory.EnumerateFiles(path).Select(filename => new FileInfo(filename).Length))
                 .Sum();
