@@ -49,7 +49,7 @@ namespace NuUpdate.Tests {
             string appPathBase;
             using (CreateTempTestPath(out appPathBase)) {
                 var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase, _nuGetCachePathForTests);
-                sut.CheckForUpdate().Wait();
+                sut.CheckForUpdate();
                 Assert.AreEqual(2, sut.AvailableUpdates.Count());
             }
         }
@@ -59,8 +59,8 @@ namespace NuUpdate.Tests {
             string appPathBase;
             using (CreateTempTestPath(out appPathBase)) {
                 var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase, _nuGetCachePathForTests);
-                var latestUpdate = sut.CheckForUpdate().Result;
-                sut.DownloadPackage(latestUpdate).Wait();
+                var latestUpdate = sut.CheckForUpdate();
+                sut.DownloadPackage(latestUpdate);
 
                 Assert.IsTrue(File.Exists(Path.Combine(_nuGetCachePathForTests, @"DemoApp.2.0.0.0.nupkg")), "Cannot find package in packages folder.");
             }
@@ -71,9 +71,9 @@ namespace NuUpdate.Tests {
             string appPathBase;
             using (CreateTempTestPath(out appPathBase)) {
                 var sut = new UpdateManager(APP_NAME, null, PackageSource, appPathBase, _nuGetCachePathForTests);
-                var latestUpdate = sut.CheckForUpdate().Result;
-                sut.DownloadPackage(latestUpdate).Wait();
-                sut.ApplyUpdate(latestUpdate).Wait();
+                var latestUpdate = sut.CheckForUpdate();
+                sut.DownloadPackage(latestUpdate);
+                sut.ApplyUpdate(latestUpdate);
 
                 Assert.IsTrue(File.Exists(Path.Combine(appPathBase, @"app-2.0.0.0\DemoApp.exe")));
             }
