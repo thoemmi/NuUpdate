@@ -129,10 +129,13 @@ namespace NuUpdate.Installer {
             var updateInfo = task.Result;
             lblProgress.Text = "Downloading version " + updateInfo.Version + " of " + _packageId;
             _logger.Info("Started downloading package version " + updateInfo.Version);
-            Task.Factory.StartNew(() => _updateManager.DownloadPackage(updateInfo, percentCompleted => Dispatcher.BeginInvoke((Action) (() => {
+            Action<int> progressHandler = percentCompleted => Dispatcher.BeginInvoke((Action) (() => {
                 progressBar.Value = percentCompleted;
                 TaskbarItemInfo.ProgressValue = percentCompleted/progressBar.Maximum;
-            })))).ContinueWith(OnDownloadPackageCompleted, TaskScheduler.FromCurrentSynchronizationContext());
+            }));
+            Task.Factory
+                .StartNew(() => _updateManager.DownloadPackage(updateInfo, progressHandler))
+                .ContinueWith(OnDownloadPackageCompleted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void OnDownloadPackageCompleted(Task<UpdateInfo> task) {
