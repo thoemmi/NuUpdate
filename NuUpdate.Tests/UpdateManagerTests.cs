@@ -14,7 +14,7 @@ namespace NuUpdate.Tests {
             var rep = GetLocalRepository();
 
             var sut = new UpdateManager(APP_NAME, null, rep);
-            sut.CheckForUpdate().Wait();
+            sut.CheckForUpdate();
 
             Assert.AreEqual(2, sut.AvailableUpdates.Count());
         }
@@ -24,7 +24,7 @@ namespace NuUpdate.Tests {
             var rep = GetLocalRepository();
 
             var sut = new UpdateManager(APP_NAME, new Version(1, 1), rep);
-            sut.CheckForUpdate().Wait();
+            sut.CheckForUpdate();
 
             Assert.AreEqual(0, sut.AvailableUpdates.Count());
         }
@@ -34,7 +34,7 @@ namespace NuUpdate.Tests {
             var rep = GetLocalRepository();
 
             var sut = new UpdateManager(APP_NAME, new Version(1, 1), rep);
-            sut.CheckForUpdate(includePrereleases: true).Wait();
+            sut.CheckForUpdate(includePrereleases: true);
 
             Assert.AreEqual(1, sut.AvailableUpdates.Count());
         }

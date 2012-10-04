@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Win32;
 using NLog;
 using NuGet;
@@ -12,7 +10,6 @@ using NuGet;
 namespace NuUpdate {
     public class UpdateManager : IUpdateManager {
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
-        private static readonly TaskScheduler _taskScheduler = TaskScheduler.Default;
         private readonly string _packageId;
         private readonly Version _currentVersion;
         private readonly IPackageRepository _packageRepository;
@@ -84,48 +81,44 @@ namespace NuUpdate {
 
         private event EventHandler<ProgressEventArgs> ProgressAvailable;
 
-        public Task<UpdateInfo> CheckForUpdate(bool includePrereleases = false) {
-            return Task.Factory.StartNew(() => {
-                var versionSpec = _currentVersion != null
-                                      ? new VersionSpec { MinVersion = new SemanticVersion(_currentVersion), IsMinInclusive = false }
-                                      : null;
-                var packages = _packageRepository.FindPackages(_packageId, versionSpec, includePrereleases, true).ToArray();
+        public UpdateInfo CheckForUpdate(bool includePrereleases = false) {
+            var versionSpec = _currentVersion != null
+                                    ? new VersionSpec { MinVersion = new SemanticVersion(_currentVersion), IsMinInclusive = false }
+                                    : null;
+            var packages = _packageRepository.FindPackages(_packageId, versionSpec, includePrereleases, true).ToArray();
 
-                _availableUpdates = packages.Select(p => new UpdateInfo(p)).ToList();
-                RaiseAvailableUpdatesChanged();
+            _availableUpdates = packages.Select(p => new UpdateInfo(p)).ToList();
+            RaiseAvailableUpdatesChanged();
 
-                // IsAbsoluteLatestVersion and IsLatestVersion are not what I expected them to be...
-                //_latestPackage = _availableUpdates.SingleOrDefault(
-                //    p => includePrereleases ? p.Package.IsAbsoluteLatestVersion : p.Package.IsLatestVersion)
-                //                 ?? _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
-                _latestPackage = _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
+            // IsAbsoluteLatestVersion and IsLatestVersion are not what I expected them to be...
+            //_latestPackage = _availableUpdates.SingleOrDefault(
+            //    p => includePrereleases ? p.Package.IsAbsoluteLatestVersion : p.Package.IsLatestVersion)
+            //                 ?? _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
+            _latestPackage = _availableUpdates.OrderByDescending(p => p.Version).FirstOrDefault();
 
-                if (_latestPackage == null) {
-                    _logger.Debug("No updates found");
-                } else {
-                    _logger.Debug("Found {0} updates, latest is {1}", _availableUpdates.Count, _latestPackage.Version);
-                }
+            if (_latestPackage == null) {
+                _logger.Debug("No updates found");
+            } else {
+                _logger.Debug("Found {0} updates, latest is {1}", _availableUpdates.Count, _latestPackage.Version);
+            }
 
-                return _latestPackage;
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
+            return _latestPackage;
         }
 
-        public Task<UpdateInfo> DownloadPackage(UpdateInfo updateInfo, Action<int> callbackPercentCompleted = null) {
-            return Task.Factory.StartNew(() => {
-                var onProgressAvailable = callbackPercentCompleted != null ? (sender, args) => callbackPercentCompleted(args.PercentComplete) : (EventHandler<ProgressEventArgs>)null;
-                if (onProgressAvailable != null) {
-                    ProgressAvailable += onProgressAvailable;
-                }
+        public UpdateInfo DownloadPackage(UpdateInfo updateInfo, Action<int> callbackPercentCompleted = null) {
+            var onProgressAvailable = callbackPercentCompleted != null ? (sender, args) => callbackPercentCompleted(args.PercentComplete) : (EventHandler<ProgressEventArgs>)null;
+            if (onProgressAvailable != null) {
+                ProgressAvailable += onProgressAvailable;
+            }
 
-                // this line forces NuGet to download the package
-                updateInfo.Package.HasProjectContent();
+            // this line forces NuGet to download the package
+            updateInfo.Package.HasProjectContent();
 
-                if (onProgressAvailable != null) {
-                    ProgressAvailable -= onProgressAvailable;
-                }
+            if (onProgressAvailable != null) {
+                ProgressAvailable -= onProgressAvailable;
+            }
 
-                return updateInfo;
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
+            return updateInfo;
         }
 
         private static IEnumerable<Tuple<IPackageFile, string>> GetFiles(IPackage package) {
@@ -144,73 +137,66 @@ namespace NuUpdate {
             }
         }
 
-        public Task<UpdateInfo> ApplyUpdate(UpdateInfo updateInfo) {
-            return Task.Factory.StartNew(() => {
-                var targetFolder = _pathProvider.GetAppPath(updateInfo);
-                _logger.Info("Target path is " + targetFolder);
+        public UpdateInfo ApplyUpdate(UpdateInfo updateInfo) {
+            var targetFolder = _pathProvider.GetAppPath(updateInfo);
+            _logger.Info("Target path is " + targetFolder);
 
-                if (Directory.Exists(targetFolder)) {
-                    Directory.Delete(targetFolder, true);
+            if (Directory.Exists(targetFolder)) {
+                Directory.Delete(targetFolder, true);
+            }
+            Directory.CreateDirectory(targetFolder);
+
+            foreach (var contentFile in GetFiles(updateInfo.Package)) {
+                _logger.Info("Extracting " + contentFile.Item1.Path);
+                var targetPath = Path.Combine(targetFolder, contentFile.Item2);
+                var targetDir = Path.GetDirectoryName(targetPath);
+                if (targetDir != null && !Directory.Exists(targetDir)) {
+                    Directory.CreateDirectory(targetDir);
                 }
-                Directory.CreateDirectory(targetFolder);
-
-                foreach (var contentFile in GetFiles(updateInfo.Package)) {
-                    _logger.Info("Extracting " + contentFile.Item1.Path);
-                    var targetPath = Path.Combine(targetFolder, contentFile.Item2);
-                    var targetDir = Path.GetDirectoryName(targetPath);
-                    if (targetDir != null && !Directory.Exists(targetDir)) {
-                        Directory.CreateDirectory(targetDir);
-                    }
-                    using (var input = contentFile.Item1.GetStream()) {
-                        using (var output = File.Create(targetPath)) {
-                            input.CopyTo(output);
-                        }
+                using (var input = contentFile.Item1.GetStream()) {
+                    using (var output = File.Create(targetPath)) {
+                        input.CopyTo(output);
                     }
                 }
-                return updateInfo;
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
+            }
+            return updateInfo;
         }
 
-        public Task<UpdateInfo> CreateShortcuts(UpdateInfo updateInfo) {
-            return Task.Factory.StartNew(() => {
+        public UpdateInfo CreateShortcuts(UpdateInfo updateInfo) {
+            new ShortcutHandler(_pathProvider).CreateShortcuts(updateInfo);
 
-                new ShortcutHandler(_pathProvider).CreateShortcuts(updateInfo);
-
-                return updateInfo;
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
+            return updateInfo;
         }
 
-        public Task<UpdateInfo> UpdateUninstallInformation(UpdateInfo updateInfo) {
-            return Task.Factory.StartNew(() => {
-                var installPath = Path.Combine(_pathProvider.AppPathBase, "install.exe");
-                var estimatedSize = (
-                    GetFolderSize(_pathProvider.GetAppPath(updateInfo)) 
-                    + GetFolderSize(_pathProvider.NuGetCachePath)
-                    + new FileInfo(installPath).Length) >> 10;
-                using (
-                    var keyUninstall = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", true)) {
-                    Debug.Assert(keyUninstall != null, "keyUninstall != null");
-                    using (var key = keyUninstall.OpenSubKey(_packageId, true) ?? keyUninstall.CreateSubKey(_packageId)) {
-                        Debug.Assert(key != null, "key != null");
-                        if (updateInfo.Package.IconUrl != null) {
-                            key.SetValue("DisplayIcon", updateInfo.Package.IconUrl);
-                        } else {
-                            key.SetValue("DisplayIcon", installPath + ",0");
-                        }
-                        key.SetValue("DisplayName", updateInfo.Package.Id, RegistryValueKind.String);
-                        key.SetValue("DisplayVersion", updateInfo.Version.ToString(), RegistryValueKind.String);
-                        key.SetValue("InstallDate", DateTimeOffset.Now.ToString("yyyyMMdd"));
-                        key.SetValue("UninstallString", installPath + " /uninstall", RegistryValueKind.ExpandString);
-                        key.SetValue("InstallLocation", _pathProvider.AppPathBase, RegistryValueKind.ExpandString);
-                        key.SetValue("Publisher", String.Join(", ", updateInfo.Package.Authors), RegistryValueKind.String);
-                        key.SetValue("VersionMajor", updateInfo.Version.Version.Major, RegistryValueKind.DWord);
-                        key.SetValue("VersionMinor", updateInfo.Version.Version.Minor, RegistryValueKind.DWord);
-                        key.SetValue("EstimatedSize", estimatedSize, RegistryValueKind.DWord);
-                        key.SetValue("NoModify", 1, RegistryValueKind.DWord);
+        public UpdateInfo UpdateUninstallInformation(UpdateInfo updateInfo) {
+            var installPath = Path.Combine(_pathProvider.AppPathBase, "install.exe");
+            var estimatedSize = (
+                GetFolderSize(_pathProvider.GetAppPath(updateInfo))
+                + GetFolderSize(_pathProvider.NuGetCachePath)
+                + new FileInfo(installPath).Length) >> 10;
+            using (
+                var keyUninstall = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", true)) {
+                Debug.Assert(keyUninstall != null, "keyUninstall != null");
+                using (var key = keyUninstall.OpenSubKey(_packageId, true) ?? keyUninstall.CreateSubKey(_packageId)) {
+                    Debug.Assert(key != null, "key != null");
+                    if (updateInfo.Package.IconUrl != null) {
+                        key.SetValue("DisplayIcon", updateInfo.Package.IconUrl);
+                    } else {
+                        key.SetValue("DisplayIcon", installPath + ",0");
                     }
+                    key.SetValue("DisplayName", updateInfo.Package.Id, RegistryValueKind.String);
+                    key.SetValue("DisplayVersion", updateInfo.Version.ToString(), RegistryValueKind.String);
+                    key.SetValue("InstallDate", DateTimeOffset.Now.ToString("yyyyMMdd"));
+                    key.SetValue("UninstallString", installPath + " /uninstall", RegistryValueKind.ExpandString);
+                    key.SetValue("InstallLocation", _pathProvider.AppPathBase, RegistryValueKind.ExpandString);
+                    key.SetValue("Publisher", String.Join(", ", updateInfo.Package.Authors), RegistryValueKind.String);
+                    key.SetValue("VersionMajor", updateInfo.Version.Version.Major, RegistryValueKind.DWord);
+                    key.SetValue("VersionMinor", updateInfo.Version.Version.Minor, RegistryValueKind.DWord);
+                    key.SetValue("EstimatedSize", estimatedSize, RegistryValueKind.DWord);
+                    key.SetValue("NoModify", 1, RegistryValueKind.DWord);
                 }
-                return updateInfo;
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, _taskScheduler);
+            }
+            return updateInfo;
         }
 
         private static long GetFolderSize(string path) {
