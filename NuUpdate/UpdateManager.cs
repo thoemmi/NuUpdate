@@ -161,8 +161,8 @@ namespace NuUpdate {
 
         public void CreateShortcuts(UpdateInfo updateInfo) {
             var appPath = _pathProvider.GetAppPath(updateInfo);
-            var shortcutHandler = new ShortcutHandler(_pathProvider);
-            foreach (var shortcut in shortcutHandler.GetShortcuts(updateInfo)) {
+            var shortcutHandler = new ShortcutHandler();
+            foreach (var shortcut in shortcutHandler.GetShortcuts(appPath)) {
                 shortcutHandler.CreateShortcut(shortcut, appPath);
             }
         }

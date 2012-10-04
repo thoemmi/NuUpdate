@@ -9,14 +9,8 @@ namespace NuUpdate {
     internal class ShortcutHandler {
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-        private readonly PathProvider _pathProvider;
-
-        public ShortcutHandler(PathProvider pathProvider) {
-            _pathProvider = pathProvider;
-        }
-
-        public IEnumerable<Shortcut> GetShortcuts(UpdateInfo updateInfo) {
-            var nuUpdateConfigPath = Path.Combine(_pathProvider.GetAppPath(updateInfo), "NuUpdate.xml");
+        public IEnumerable<Shortcut> GetShortcuts(string appPath) {
+            var nuUpdateConfigPath = Path.Combine(appPath, "NuUpdate.xml");
             var instructions = File.Exists(nuUpdateConfigPath)
                 ? UpdateInstructions.Load(nuUpdateConfigPath) 
                 : null;
@@ -26,7 +20,7 @@ namespace NuUpdate {
             } else {
                 _logger.Info("No update instructions found, creating a shortcut for each executable in start menu.");
                 return Directory
-                    .EnumerateFiles(_pathProvider.GetAppPath(updateInfo), "*.exe")
+                    .EnumerateFiles(appPath, "*.exe")
                     .Select(exePath => new Shortcut {
                         Title = Path.GetFileNameWithoutExtension(exePath),
                         TargetPath = exePath,
