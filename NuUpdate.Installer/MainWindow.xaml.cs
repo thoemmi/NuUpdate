@@ -26,11 +26,6 @@ namespace NuUpdate.Installer {
 
             var logfile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName(), "installer.log");
             ConfigureLogging(logfile);
-            _logger.Info("----------------------------------");
-            _logger.Info("Installer started");
-            if (Debugger.IsAttached) {
-                _logger.Debug("Logfile is " + logfile);
-            }
 
             var s = Win32ResourceManager.ReadRessource<string>(GetType().Assembly.Location, 1711);
             if (String.IsNullOrEmpty(s)) {
@@ -61,9 +56,6 @@ namespace NuUpdate.Installer {
             _packageId = parts[0];
             _packageSource = parts[1];
 
-            _logger.Info("Detected package id:     " + _packageId);
-            _logger.Info("Detected package source: " + _packageSource);
-
             var oldLogFile = logfile;
             logfile = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -73,9 +65,15 @@ namespace NuUpdate.Installer {
             _logger.Info("Switching to application specific log file " + logfile);
 
             ConfigureLogging(logfile);
-            _logger.Info("----------------------------------");
+            try {
+                File.Delete(oldLogFile);
+            } catch (Exception ex) {
+                _logger.WarnException("Deleting temp log failed", ex);
+            }
             _logger.Info("Installer started");
-            _logger.Debug("Previous logfile was " + oldLogFile);
+
+            _logger.Info("Detected package id:     " + _packageId);
+            _logger.Info("Detected package source: " + _packageSource);
 
             _updateManager = new UpdateManager(_packageId, null, _packageSource);
 
@@ -91,6 +89,7 @@ namespace NuUpdate.Installer {
         private static void ConfigureLogging(string logFileName) {
             var fileTarget = new FileTarget {
                 FileName = logFileName,
+                Header = new SimpleLayout("${longdate} ----------------------------------------${newline}${longdate} - Process ${processname:fullName=true}"),
                 Layout = new SimpleLayout("${longdate} - ${message} ${exception:format=tostring}")
             };
             var asyncTarget = new AsyncTargetWrapper(fileTarget);
