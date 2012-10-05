@@ -32,7 +32,7 @@ namespace NuUpdate {
                     TargetPath = GetChildAsString(element, "TargetPath"),
                     Arguments = GetChildAsString(element, "Arguments"),
                     IconPath = GetChildAsString(element, "IconPath"),
-                    IconIndex = GetChildAsInt32(element, "IconPath")
+                    IconIndex = GetChildAsInt32(element, "IconIndex")
                 }
                     ).ToArray();
                 return new UpdateInstructions {
