@@ -28,9 +28,20 @@ namespace NuUpdate {
             }
         }
 
+        public void DeleteShortcut(Shortcut shortcut) {
+            var lnkFilename = GetLinkFileName(shortcut);
+            if (File.Exists(lnkFilename)) {
+                try {
+                    File.Delete(lnkFilename);
+                } catch (Exception ex) {
+                    _logger.ErrorException(String.Format("Deleting shortcut \"{0}\" at \"{1}\" failed", shortcut.Title, shortcut.TargetPath), ex);
+                }
+            }
+        }
+
         public void CreateShortcut(Shortcut shortcut, string appPath) {
             try {
-                var lnkFilename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), shortcut.Title + ".lnk");
+                var lnkFilename = GetLinkFileName(shortcut);
                 var target = Path.Combine(appPath, shortcut.TargetPath);
 
                 if (!File.Exists(target)) {
@@ -49,6 +60,10 @@ namespace NuUpdate {
             } catch (Exception ex) {
                 _logger.ErrorException(String.Format("Creating shortcut \"{0}\" to \"{1}\" failed", shortcut.Title, shortcut.TargetPath), ex);
             }
+        }
+
+        private static string GetLinkFileName(Shortcut shortcut) {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), shortcut.Title + ".lnk");
         }
     }
 }
