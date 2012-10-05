@@ -38,21 +38,56 @@ namespace NuUpdate {
                 return new UpdateInstructions {
                     Shortcuts = shortcuts
                 };
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 _logger.ErrorException(String.Format("Reading update instruction from {0} failed", path), ex);
                 return null;
             }
         }
-
     }
 
-    internal class Shortcut {
+    internal class Shortcut : IEquatable<Shortcut> {
         public string Title { get; set; }
         public string Description { get; set; }
         public string TargetPath { get; set; }
         public string Arguments { get; set; }
         public string IconPath { get; set; }
         public int IconIndex { get; set; }
+
+        public override bool Equals(object obj) {
+            if (ReferenceEquals(null, obj)) {
+                return false;
+            }
+            if (ReferenceEquals(this, obj)) {
+                return true;
+            }
+            if (obj.GetType() != GetType()) {
+                return false;
+            }
+            return Equals((Shortcut) obj);
+        }
+
+        public bool Equals(Shortcut other) {
+            if (ReferenceEquals(null, other)) {
+                return false;
+            }
+            if (ReferenceEquals(this, other)) {
+                return true;
+            }
+            return string.Equals(Title, other.Title) && string.Equals(Description, other.Description) &&
+                   string.Equals(TargetPath, other.TargetPath) && string.Equals(Arguments, other.Arguments) &&
+                   string.Equals(IconPath, other.IconPath) && IconIndex == other.IconIndex;
+        }
+
+        public override int GetHashCode() {
+            unchecked {
+                var hashCode = (Title != null ? Title.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (Description != null ? Description.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (TargetPath != null ? TargetPath.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (Arguments != null ? Arguments.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (IconPath != null ? IconPath.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ IconIndex;
+                return hashCode;
+            }
+        }
     }
 }

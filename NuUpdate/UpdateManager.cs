@@ -162,9 +162,12 @@ namespace NuUpdate {
         public void CreateShortcuts(UpdateInfo updateInfo) {
             var appPath = _pathProvider.GetAppPath(updateInfo);
             var shortcutHandler = new ShortcutHandler();
-            foreach (var shortcut in shortcutHandler.GetShortcuts(appPath)) {
-                shortcutHandler.CreateShortcut(shortcut, appPath);
-            }
+            var currentShortcuts = shortcutHandler.GetShortcuts(_pathProvider.GetAppPath(_currentVersion)).ToList();
+            var newShortcuts = shortcutHandler.GetShortcuts(appPath).ToList();
+
+            var toDelete = currentShortcuts.Except(newShortcuts);
+            shortcutHandler.CreateShortcut();
+
         }
 
         public void UpdateUninstallInformation(UpdateInfo updateInfo) {
